@@ -1,0 +1,851 @@
+{
+  "$defs": {
+    "BenchmarkCase": {
+      "additionalProperties": false,
+      "description": "One workflow test executed against every model.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "input": {
+          "additionalProperties": true,
+          "title": "Input",
+          "type": "object"
+        },
+        "prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit prompt override; else built from input.",
+          "title": "Prompt"
+        },
+        "expected": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected"
+        },
+        "expected_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Text"
+        },
+        "expected_schema": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Schema"
+        },
+        "required_fields": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Fields",
+          "type": "array"
+        },
+        "forbidden_content": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Forbidden Content",
+          "type": "array"
+        },
+        "required_content": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Content",
+          "type": "array"
+        },
+        "expected_tool_calls": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Expected Tool Calls",
+          "type": "array"
+        },
+        "forbidden_tools": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Forbidden Tools",
+          "type": "array"
+        },
+        "expected_citations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Expected Citations",
+          "type": "array"
+        },
+        "policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PolicyExpectation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "weight": {
+          "default": 1.0,
+          "title": "Weight",
+          "type": "number"
+        },
+        "timeout_override": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout Override"
+        },
+        "evaluators": {
+          "items": {
+            "$ref": "#/$defs/EvaluatorSpec"
+          },
+          "title": "Evaluators",
+          "type": "array"
+        },
+        "sensitive": {
+          "default": false,
+          "title": "Sensitive",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "BenchmarkCase",
+      "type": "object"
+    },
+    "CascadeCondition": {
+      "description": "Conditions that trigger escalation to the stronger stage in cascade mode.",
+      "enum": [
+        "evaluator_failure",
+        "invalid_json",
+        "low_score",
+        "policy_failure",
+        "low_confidence",
+        "timeout",
+        "case_tag"
+      ],
+      "title": "CascadeCondition",
+      "type": "string"
+    },
+    "CascadeConfig": {
+      "additionalProperties": false,
+      "description": "First-stage + escalation configuration for cascade mode.",
+      "properties": {
+        "first_stage": {
+          "title": "First Stage",
+          "type": "string"
+        },
+        "escalation_model": {
+          "title": "Escalation Model",
+          "type": "string"
+        },
+        "conditions": {
+          "items": {
+            "$ref": "#/$defs/CascadeCondition"
+          },
+          "title": "Conditions",
+          "type": "array"
+        },
+        "low_score_threshold": {
+          "default": 0.5,
+          "title": "Low Score Threshold",
+          "type": "number"
+        },
+        "low_confidence_threshold": {
+          "default": 0.5,
+          "title": "Low Confidence Threshold",
+          "type": "number"
+        },
+        "escalate_tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Escalate Tags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "first_stage",
+        "escalation_model"
+      ],
+      "title": "CascadeConfig",
+      "type": "object"
+    },
+    "ComputeCostProfile": {
+      "additionalProperties": false,
+      "description": "Operator-supplied estimates for local-compute cost. All values are estimates.",
+      "properties": {
+        "electricity_price_per_kwh": {
+          "default": 0.0,
+          "title": "Electricity Price Per Kwh",
+          "type": "number"
+        },
+        "watts": {
+          "default": 0.0,
+          "title": "Watts",
+          "type": "number"
+        },
+        "hardware_amortization_per_hour": {
+          "default": 0.0,
+          "title": "Hardware Amortization Per Hour",
+          "type": "number"
+        },
+        "cloud_gpu_hourly_rate": {
+          "default": 0.0,
+          "title": "Cloud Gpu Hourly Rate",
+          "type": "number"
+        },
+        "fixed_overhead_per_run_usd": {
+          "default": 0.0,
+          "title": "Fixed Overhead Per Run Usd",
+          "type": "number"
+        }
+      },
+      "title": "ComputeCostProfile",
+      "type": "object"
+    },
+    "Constraints": {
+      "additionalProperties": false,
+      "description": "Suite-level pass/fail gates.",
+      "properties": {
+        "minimum_success_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum Success Rate"
+        },
+        "maximum_p95_latency_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum P95 Latency Ms"
+        },
+        "maximum_cost_per_success_usd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum Cost Per Success Usd"
+        },
+        "require_policy_pass": {
+          "default": false,
+          "title": "Require Policy Pass",
+          "type": "boolean"
+        },
+        "require_valid_json_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Require Valid Json Rate"
+        },
+        "minimum_tool_accuracy": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum Tool Accuracy"
+        },
+        "maximum_timeout_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum Timeout Rate"
+        }
+      },
+      "title": "Constraints",
+      "type": "object"
+    },
+    "CostMode": {
+      "description": "How per-call cost is estimated.",
+      "enum": [
+        "zero_marginal",
+        "estimated_compute"
+      ],
+      "title": "CostMode",
+      "type": "string"
+    },
+    "DeploymentType": {
+      "description": "Where a model physically runs \u2014 used for privacy/portability classification.",
+      "enum": [
+        "local",
+        "self_hosted",
+        "hosted",
+        "test"
+      ],
+      "title": "DeploymentType",
+      "type": "string"
+    },
+    "EvaluatorSpec": {
+      "additionalProperties": false,
+      "description": "A reference to an evaluator plus its options.\n\nIn YAML an evaluator may be written either as a bare string (``json_schema``)\nor as a mapping (``{name: field_match, options: {...}}``). Both normalize here.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "weight": {
+          "default": 1.0,
+          "title": "Weight",
+          "type": "number"
+        },
+        "options": {
+          "additionalProperties": true,
+          "title": "Options",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "EvaluatorSpec",
+      "type": "object"
+    },
+    "ExecutionConfig": {
+      "additionalProperties": false,
+      "description": "How the suite runs.",
+      "properties": {
+        "mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "repetitions": {
+          "default": 1,
+          "title": "Repetitions",
+          "type": "integer"
+        },
+        "concurrency": {
+          "default": 1,
+          "title": "Concurrency",
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "default": 60.0,
+          "title": "Timeout Seconds",
+          "type": "number"
+        },
+        "retries": {
+          "default": 0,
+          "title": "Retries",
+          "type": "integer"
+        },
+        "store_raw_outputs": {
+          "default": true,
+          "title": "Store Raw Outputs",
+          "type": "boolean"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        }
+      },
+      "title": "ExecutionConfig",
+      "type": "object"
+    },
+    "ExecutionMode": {
+      "description": "How a suite is executed across its models.",
+      "enum": [
+        "single",
+        "comparison",
+        "baseline_vs_candidate",
+        "cascade"
+      ],
+      "title": "ExecutionMode",
+      "type": "string"
+    },
+    "ModelCandidate": {
+      "additionalProperties": false,
+      "description": "A single model configuration under test.",
+      "properties": {
+        "alias": {
+          "title": "Alias",
+          "type": "string"
+        },
+        "provider": {
+          "$ref": "#/$defs/ProviderKind"
+        },
+        "model": {
+          "description": "Provider-specific model id, e.g. 'qwen2.5:3b'.",
+          "title": "Model",
+          "type": "string"
+        },
+        "deployment": {
+          "$ref": "#/$defs/DeploymentType",
+          "default": "local"
+        },
+        "base_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Url"
+        },
+        "api_key_env": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Name of the environment variable holding the API key (never the key itself).",
+          "title": "Api Key Env"
+        },
+        "estimated_input_cost_per_million": {
+          "default": 0.0,
+          "title": "Estimated Input Cost Per Million",
+          "type": "number"
+        },
+        "estimated_output_cost_per_million": {
+          "default": 0.0,
+          "title": "Estimated Output Cost Per Million",
+          "type": "number"
+        },
+        "context_limit": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context Limit"
+        },
+        "timeout_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout Seconds"
+        },
+        "retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retries"
+        },
+        "temperature": {
+          "default": 0.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "fixture": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Deterministic-provider fixture id.",
+          "title": "Fixture"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        }
+      },
+      "required": [
+        "alias",
+        "provider",
+        "model"
+      ],
+      "title": "ModelCandidate",
+      "type": "object"
+    },
+    "PolicyExpectation": {
+      "additionalProperties": false,
+      "description": "Declarative policy expectations checked by :class:`PolicyComplianceEvaluator`.",
+      "properties": {
+        "forbidden_actions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Forbidden Actions",
+          "type": "array"
+        },
+        "require_refusal": {
+          "default": false,
+          "title": "Require Refusal",
+          "type": "boolean"
+        },
+        "require_approval": {
+          "default": false,
+          "title": "Require Approval",
+          "type": "boolean"
+        },
+        "required_events": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Events",
+          "type": "array"
+        }
+      },
+      "title": "PolicyExpectation",
+      "type": "object"
+    },
+    "PrivacyConfig": {
+      "additionalProperties": false,
+      "description": "Privacy and data-handling behavior for the suite.",
+      "properties": {
+        "allow_hosted_providers": {
+          "default": false,
+          "title": "Allow Hosted Providers",
+          "type": "boolean"
+        },
+        "redact_inputs_in_reports": {
+          "default": false,
+          "title": "Redact Inputs In Reports",
+          "type": "boolean"
+        },
+        "store_raw_outputs": {
+          "default": true,
+          "title": "Store Raw Outputs",
+          "type": "boolean"
+        }
+      },
+      "title": "PrivacyConfig",
+      "type": "object"
+    },
+    "ProviderKind": {
+      "description": "Supported provider backends.",
+      "enum": [
+        "deterministic",
+        "ollama",
+        "forge",
+        "openai_compatible",
+        "openai",
+        "anthropic",
+        "bedrock"
+      ],
+      "title": "ProviderKind",
+      "type": "string"
+    },
+    "ReplacementConfig": {
+      "additionalProperties": false,
+      "description": "Baseline-vs-candidate replacement thresholds.",
+      "properties": {
+        "baseline": {
+          "title": "Baseline",
+          "type": "string"
+        },
+        "candidates": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Candidates",
+          "type": "array"
+        },
+        "maximum_quality_drop": {
+          "default": 0.05,
+          "title": "Maximum Quality Drop",
+          "type": "number"
+        },
+        "minimum_cost_reduction": {
+          "default": 0.2,
+          "title": "Minimum Cost Reduction",
+          "type": "number"
+        },
+        "maximum_latency_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum Latency Ms"
+        },
+        "minimum_reliability": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum Reliability"
+        }
+      },
+      "required": [
+        "baseline",
+        "candidates"
+      ],
+      "title": "ReplacementConfig",
+      "type": "object"
+    },
+    "ScoringConfig": {
+      "additionalProperties": false,
+      "description": "Scoring / economics configuration.",
+      "properties": {
+        "cost_mode": {
+          "$ref": "#/$defs/CostMode",
+          "default": "zero_marginal"
+        },
+        "compute_profile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ComputeCostProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "ScoringConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A complete, self-contained benchmark definition.",
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "default": "1.0",
+      "title": "Version",
+      "type": "string"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "workflow": {
+      "default": "generic",
+      "title": "Workflow",
+      "type": "string"
+    },
+    "baseline_model": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Baseline Model"
+    },
+    "models": {
+      "items": {
+        "$ref": "#/$defs/ModelCandidate"
+      },
+      "title": "Models",
+      "type": "array"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/BenchmarkCase"
+      },
+      "title": "Cases",
+      "type": "array"
+    },
+    "evaluators": {
+      "items": {
+        "$ref": "#/$defs/EvaluatorSpec"
+      },
+      "title": "Evaluators",
+      "type": "array"
+    },
+    "constraints": {
+      "$ref": "#/$defs/Constraints"
+    },
+    "scoring": {
+      "$ref": "#/$defs/ScoringConfig"
+    },
+    "execution": {
+      "$ref": "#/$defs/ExecutionConfig"
+    },
+    "cascade": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CascadeConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "privacy": {
+      "$ref": "#/$defs/PrivacyConfig"
+    },
+    "replacement": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReplacementConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "name",
+    "models",
+    "cases"
+  ],
+  "title": "ModelSwapBench Benchmark Suite",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

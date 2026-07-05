@@ -1,0 +1,41 @@
+# ModelSwapBench default pricing registry.
+#
+# WARNING: Pricing values are user-configurable ESTIMATES and may become
+# outdated. ModelSwapBench never treats these as measured fact. Local models
+# have zero marginal API cost; hosted entries are PLACEHOLDERS you must replace
+# with your own negotiated/observed rates. Prices are USD per 1,000,000 tokens.
+
+version: "2026.07.0"
+currency: USD
+entries:
+  - model: qwen2.5:3b
+    provider: ollama
+    input_price: 0.0
+    output_price: 0.0
+    measured: false
+    effective_date: "2026-07-05"
+    source: "local model — zero marginal API cost"
+
+  - model: qwen2.5:7b
+    provider: ollama
+    input_price: 0.0
+    output_price: 0.0
+    measured: false
+    effective_date: "2026-07-05"
+    source: "local model — zero marginal API cost"
+
+  - model: baseline-fixture
+    provider: deterministic
+    input_price: 0.0
+    output_price: 0.0
+    measured: false
+    effective_date: "2026-07-05"
+    source: "deterministic test provider — no cost"
+
+  - model: hosted-example
+    provider: openai_compatible
+    input_price: 0.0
+    output_price: 0.0
+    measured: false
+    effective_date: "2026-07-05"
+    source: "PLACEHOLDER — replace with your endpoint's negotiated rate"

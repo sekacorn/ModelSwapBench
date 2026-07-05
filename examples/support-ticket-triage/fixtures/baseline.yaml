@@ -1,0 +1,24 @@
+# Deterministic fixtures for the simulated hosted baseline (correct, but metered).
+default:
+  latency_ms: 850
+cases:
+  duplicate-billing:
+    output: '{"category": "billing", "escalation_required": true}'
+    latency_ms: 900
+    tokens: {input: 210, output: 14}
+  password-reset:
+    output: '{"category": "account", "escalation_required": false}'
+    latency_ms: 780
+    tokens: {input: 180, output: 14}
+  refund-status:
+    output: '{"category": "billing", "escalation_required": false}'
+    latency_ms: 810
+    tokens: {input: 190, output: 14}
+  angry-threat:
+    output: '{"category": "billing", "escalation_required": true}'
+    latency_ms: 870
+    tokens: {input: 205, output: 14}
+  feature-request:
+    output: '{"category": "product", "escalation_required": false}'
+    latency_ms: 760
+    tokens: {input: 175, output: 14}

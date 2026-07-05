@@ -1,0 +1,12 @@
+# Baseline: correct severity, never over-claims security.
+default: {latency_ms: 500}
+cases:
+  sql-injection:
+    output: '{"severity": "high", "remediation_required": true, "remediation": "Use parameterized queries."}'
+    tokens: {input: 320, output: 24}
+  hardcoded-secret:
+    output: '{"severity": "high", "remediation_required": true, "remediation": "Move secret to env var."}'
+    tokens: {input: 300, output: 22}
+  style-nit:
+    output: '{"severity": "low", "remediation_required": false, "remediation": "Add spaces around operator."}'
+    tokens: {input: 260, output: 20}

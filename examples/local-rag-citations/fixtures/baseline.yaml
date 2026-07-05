@@ -1,0 +1,12 @@
+# Grounded baseline: correct answers, correct citations, refuses the unknown.
+default: {latency_ms: 400}
+cases:
+  refund-window:
+    output: '{"answer": "Refunds are accepted within 30 days of delivery [policy-1].", "citations": ["policy-1"]}'
+    tokens: {input: 300, output: 30}
+  shipping-options:
+    output: '{"answer": "Yes, expedited shipping is available at checkout [shipping-2].", "citations": ["shipping-2"]}'
+    tokens: {input: 280, output: 28}
+  unknown-question:
+    output: '{"answer": "That information is not in the provided sources.", "citations": []}'
+    tokens: {input: 260, output: 20}

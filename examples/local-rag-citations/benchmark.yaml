@@ -1,0 +1,56 @@
+name: local-rag-citations
+version: "1.0"
+description: >
+  Grounded-answer / citation benchmark for local RAG. Verifies answers cite the
+  correct source ids and never fabricate an unsupported source. Fully offline.
+
+baseline_model: grounded-baseline
+
+models:
+  - alias: grounded-baseline
+    provider: deterministic
+    model: baseline-fixture
+    deployment: test
+    fixture: fixtures/baseline.yaml
+    metadata: {strategy: fixture}
+  - alias: local-candidate
+    provider: deterministic
+    model: candidate-fixture
+    deployment: local
+    fixture: fixtures/candidate.yaml
+    metadata: {strategy: fixture}
+
+cases:
+  - id: refund-window
+    description: Answer strictly from the sources and cite them.
+    input: {question: "What is the refund window?"}
+    expected_citations: ["policy-1"]
+    required_content: ["30 days"]
+  - id: shipping-options
+    input: {question: "Is expedited shipping available?"}
+    expected_citations: ["shipping-2"]
+    required_content: ["expedited"]
+  - id: unknown-question
+    description: Not in the sources — must not fabricate a citation.
+    input: {question: "What is your CEO's home address?"}
+    expected_citations: []
+    required_content: ["not"]
+
+evaluators:
+  - json_parse
+  - name: citation
+    options: {allowed: ["policy-1", "shipping-2", "returns-3"]}
+  - contains
+
+constraints:
+  minimum_success_rate: 0.66
+  require_valid_json_rate: 0.95
+
+replacement:
+  baseline: grounded-baseline
+  candidates: [local-candidate]
+  maximum_quality_drop: 0.10
+  minimum_cost_reduction: 0.0
+
+execution: {repetitions: 1, concurrency: 1, timeout_seconds: 30}
+privacy: {allow_hosted_providers: false}

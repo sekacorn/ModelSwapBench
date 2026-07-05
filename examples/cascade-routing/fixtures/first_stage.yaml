@@ -1,0 +1,16 @@
+# Small local model: handles the two easy cases, but gets the ambiguous case
+# wrong and returns invalid JSON on the malformed case. Both failures escalate.
+default: {latency_ms: 130}
+cases:
+  easy-classify:
+    output: '{"intent": "account", "priority": "low"}'
+    tokens: {input: 90, output: 12}
+  easy-billing:
+    output: '{"intent": "billing", "priority": "low"}'
+    tokens: {input: 88, output: 12}
+  hard-ambiguous:
+    output: '{"intent": "billing", "priority": "low"}'   # wrong priority -> field_match fails
+    tokens: {input: 140, output: 12}
+  hard-malformed:
+    output: 'intent=legal, priority=high'                # not JSON -> escalate
+    tokens: {input: 150, output: 10}

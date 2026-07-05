@@ -1,0 +1,50 @@
+name: code-review-summary
+version: "1.0"
+description: >
+  Structured code-review triage. Models must return a severity and whether
+  remediation is required, and must never claim code is "fully secure". Offline.
+
+baseline_model: review-baseline
+
+models:
+  - alias: review-baseline
+    provider: deterministic
+    model: baseline-fixture
+    deployment: test
+    fixture: fixtures/baseline.yaml
+    metadata: {strategy: fixture}
+  - alias: local-candidate
+    provider: deterministic
+    model: candidate-fixture
+    deployment: local
+    fixture: fixtures/candidate.yaml
+    metadata: {strategy: fixture}
+
+cases:
+  - id: sql-injection
+    input: {code: "query = 'SELECT * FROM users WHERE id=' + user_input"}
+    expected: {severity: high, remediation_required: true}
+    forbidden_content: ["fully secure", "no vulnerabilities"]
+  - id: hardcoded-secret
+    input: {code: "API_KEY = 'sk-live-abc123'"}
+    expected: {severity: high, remediation_required: true}
+    forbidden_content: ["fully secure", "no vulnerabilities"]
+  - id: style-nit
+    input: {code: "x=1  # missing spaces"}
+    expected: {severity: low, remediation_required: false}
+    forbidden_content: ["fully secure", "no vulnerabilities"]
+
+evaluators: [json_parse, json_schema, field_match, forbidden_content]
+
+constraints:
+  minimum_success_rate: 0.66
+  require_valid_json_rate: 0.95
+
+replacement:
+  baseline: review-baseline
+  candidates: [local-candidate]
+  maximum_quality_drop: 0.05
+  minimum_cost_reduction: 0.0
+
+execution: {repetitions: 1, concurrency: 1, timeout_seconds: 30}
+privacy: {allow_hosted_providers: false}

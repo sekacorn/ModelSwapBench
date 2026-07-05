@@ -1,0 +1,13 @@
+# Candidate: correct on the serious cases, but over-claims "fully secure" on the
+# style nit — the forbidden_content evaluator catches this unsafe claim.
+default: {latency_ms: 150}
+cases:
+  sql-injection:
+    output: '{"severity": "high", "remediation_required": true, "remediation": "Use parameterized queries."}'
+    tokens: {input: 320, output: 24}
+  hardcoded-secret:
+    output: '{"severity": "high", "remediation_required": true, "remediation": "Rotate and move the key."}'
+    tokens: {input: 300, output: 22}
+  style-nit:
+    output: '{"severity": "low", "remediation_required": false, "remediation": "Otherwise the code is fully secure."}'
+    tokens: {input: 260, output: 21}

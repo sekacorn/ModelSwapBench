@@ -1,0 +1,82 @@
+name: support-ticket-triage
+version: "1.0"
+description: >
+  Compare models for support-ticket classification. The baseline simulates an
+  expensive hosted model (priced, token-metered); the candidate simulates a free
+  local model. Fully offline — runs with the deterministic provider, no downloads.
+
+baseline_model: hosted-baseline
+
+models:
+  # Simulated expensive hosted model: correct answers, but priced and token-metered.
+  - alias: hosted-baseline
+    provider: deterministic
+    model: baseline-fixture
+    deployment: test
+    estimated_input_cost_per_million: 5.0
+    estimated_output_cost_per_million: 15.0
+    fixture: fixtures/baseline.yaml
+    metadata: {strategy: fixture}
+
+  # Simulated free local model (stand-in for `ollama / qwen2.5:3b`). Zero cost.
+  # Swap provider: ollama, model: qwen2.5:3b, deployment: local to run for real.
+  - alias: local-candidate
+    provider: deterministic
+    model: candidate-fixture
+    deployment: local
+    estimated_input_cost_per_million: 0.0
+    estimated_output_cost_per_million: 0.0
+    fixture: fixtures/candidate.yaml
+    metadata: {strategy: fixture}
+
+cases:
+  - id: duplicate-billing
+    description: Customer reports a duplicate charge.
+    input: {message: "I was charged twice for the same order and need help."}
+    expected: {category: billing, escalation_required: true}
+    forbidden_content: ["fully resolved", "SSN"]
+  - id: password-reset
+    description: Routine password reset.
+    input: {message: "I forgot my password and can't log in."}
+    expected: {category: account, escalation_required: false}
+  - id: refund-status
+    description: Where is my refund.
+    input: {message: "It's been two weeks, where is my refund?"}
+    expected: {category: billing, escalation_required: false}
+  - id: angry-threat
+    description: Angry customer threatening chargeback.
+    input: {message: "This is unacceptable, I will dispute the charge with my bank!"}
+    expected: {category: billing, escalation_required: true}
+  - id: feature-request
+    description: Product feature request.
+    input: {message: "Can you add dark mode to the mobile app?"}
+    expected: {category: product, escalation_required: false}
+
+evaluators:
+  - json_parse
+  - json_schema
+  - field_match
+  - forbidden_content
+
+constraints:
+  minimum_success_rate: 0.80
+  maximum_p95_latency_ms: 15000
+  maximum_cost_per_success_usd: 0.05
+  require_valid_json_rate: 0.95
+
+replacement:
+  baseline: hosted-baseline
+  candidates: [local-candidate]
+  maximum_quality_drop: 0.05
+  minimum_cost_reduction: 0.20
+
+execution:
+  repetitions: 1
+  concurrency: 2
+  timeout_seconds: 60
+  retries: 0
+  store_raw_outputs: true
+
+privacy:
+  allow_hosted_providers: false
+  redact_inputs_in_reports: false

@@ -1,0 +1,52 @@
+name: cascade-routing
+version: "1.0"
+description: >
+  Cascade strategy: run a cheap local model first and escalate only the cases it
+  gets wrong (or returns invalid JSON) to a stronger model. Reports escalation
+  rate, combined success, and combined cost. Fully offline.
+
+baseline_model: local-first
+
+models:
+  - alias: local-first
+    provider: deterministic
+    model: small-local
+    deployment: local
+    estimated_input_cost_per_million: 0.0
+    estimated_output_cost_per_million: 0.0
+    fixture: fixtures/first_stage.yaml
+    metadata: {strategy: fixture}
+  - alias: strong-fallback
+    provider: deterministic
+    model: strong-fixture
+    deployment: test
+    estimated_input_cost_per_million: 10.0
+    estimated_output_cost_per_million: 30.0
+    metadata: {strategy: oracle, latency_ms: 900}
+
+cases:
+  - id: easy-classify
+    input: {message: "Reset my password please."}
+    expected: {intent: account, priority: low}
+  - id: easy-billing
+    input: {message: "Refund status?"}
+    expected: {intent: billing, priority: low}
+  - id: hard-ambiguous
+    input: {message: "It broke again after the last charge and I'm furious."}
+    expected: {intent: billing, priority: high}
+  - id: hard-malformed
+    input: {message: "Legal threat regarding data retention."}
+    expected: {intent: legal, priority: high}
+
+evaluators: [json_parse, json_schema, field_match]
+
+cascade:
+  first_stage: local-first
+  escalation_model: strong-fallback
+  conditions: [evaluator_failure, invalid_json]
+
+constraints:
+  minimum_success_rate: 0.5
+
+execution: {repetitions: 1, concurrency: 1, timeout_seconds: 30}
+privacy: {allow_hosted_providers: false}

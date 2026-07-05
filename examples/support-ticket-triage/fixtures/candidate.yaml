@@ -1,0 +1,24 @@
+# Deterministic fixtures for the simulated free local candidate (correct, zero cost).
+default:
+  latency_ms: 240
+cases:
+  duplicate-billing:
+    output: '{"category": "billing", "escalation_required": true}'
+    latency_ms: 260
+    tokens: {input: 210, output: 14}
+  password-reset:
+    output: '{"category": "account", "escalation_required": false}'
+    latency_ms: 210
+    tokens: {input: 180, output: 14}
+  refund-status:
+    output: '{"category": "billing", "escalation_required": false}'
+    latency_ms: 230
+    tokens: {input: 190, output: 14}
+  angry-threat:
+    output: '{"category": "billing", "escalation_required": true}'
+    latency_ms: 250
+    tokens: {input: 205, output: 14}
+  feature-request:
+    output: '{"category": "product", "escalation_required": false}'
+    latency_ms: 205
+    tokens: {input: 175, output: 14}

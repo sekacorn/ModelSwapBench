@@ -1,0 +1,59 @@
+name: Release
+
+# Builds artifacts on a version tag, then publishes to PyPI via OIDC Trusted
+# Publishing (no API tokens). PyPI verifies repository, workflow filename
+# (release.yml), and environment (pypi) against the registered trusted publisher.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: "3.13"
+      - run: python -m pip install --upgrade pip build twine
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - run: sha256sum dist/* > checksums.txt
+      - name: Generate SBOM (best effort)
+        run: |
+          python -m pip install cyclonedx-bom || true
+          cyclonedx-py environment -o sbom.json || true
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: release-artifacts
+          path: |
+            dist/*
+            checksums.txt
+            sbom.json
+
+  publish:
+    needs: build
+    # Publish only on version tags, never from PRs or branch pushes.
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    # Must match the "Environment name" of the PyPI trusted publisher.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/modelswapbench
+    permissions:
+      id-token: write # required for PyPI trusted publishing (OIDC)
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: release-artifacts
+      # NOTE: This is a Docker action; it pulls ghcr.io/pypa/gh-action-pypi-publish:<ref>.
+      # No image is tagged by commit SHA, so it must be pinned to a version tag, not a SHA.
+      - uses: pypa/gh-action-pypi-publish@v1.14.0
+        with:
+          packages-dir: dist

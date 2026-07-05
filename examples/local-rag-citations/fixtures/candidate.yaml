@@ -1,0 +1,13 @@
+# Local candidate: correct on grounded questions, but FABRICATES a source on the
+# unknown question ([made-up]) — the citation evaluator catches this failure.
+default: {latency_ms: 120}
+cases:
+  refund-window:
+    output: '{"answer": "Refunds are accepted within 30 days of delivery [policy-1].", "citations": ["policy-1"]}'
+    tokens: {input: 300, output: 30}
+  shipping-options:
+    output: '{"answer": "Yes, expedited shipping is available [shipping-2].", "citations": ["shipping-2"]}'
+    tokens: {input: 280, output: 26}
+  unknown-question:
+    output: '{"answer": "The address is listed in [made-up-source].", "citations": ["made-up-source"]}'
+    tokens: {input: 260, output: 22}
