@@ -39,10 +39,7 @@ def print_schema(out: Path | None) -> None:
 
 def list_models(file: Path) -> None:
     suite = load_suite(file)
-    rows = [
-        (m.alias, m.provider.value, m.model, m.deployment.value, "hosted" if m.is_hosted else "local")
-        for m in suite.models
-    ]
+    rows = [(m.alias, m.provider.value, m.model, m.deployment.value, "hosted" if m.is_hosted else "local") for m in suite.models]
     output.table(f"Models in {suite.name}", ["alias", "provider", "model", "deployment", "class"], rows)
 
 
@@ -223,23 +220,24 @@ def runs_show(run_ref: str, root: Path | None) -> None:
     output.info(f"[bold]{run_result.run_id}[/bold] — {run_result.suite_name} v{run_result.suite_version} ({run_result.mode})")
     output.info(f"  manifest hash: {run_result.manifest_hash[:16]} | cases: {len(run_result.case_results)}")
     output.info(
-        f"  package: {manifest.get('package_version')} | forge: {manifest.get('forge_version')} "
-        f"| python: {manifest.get('python_version')}"
+        f"  package: {manifest.get('package_version')} | forge: {manifest.get('forge_version')} | python: {manifest.get('python_version')}"
     )
     output.info(f"  git commit: {manifest.get('git_commit') or 'n/a'}")
 
 
 def reproduce(run_ref: str, root: Path | None) -> tuple[BenchmarkRun, ExitCode]:
     repo = RunRepository(root or Path.cwd())
+    run_id = repo.resolve(run_ref)
     old_manifest = repo.load_manifest(run_ref)
-    suite = repo.load_suite_snapshot(run_ref)
-    runner = BenchmarkRunner(suite)
+    suite = repo.load_suite_snapshot(run_id)
+    suite_dir = repo.run_dir(run_id)
+    runner = BenchmarkRunner(suite, suite_dir=suite_dir)
     new_run = asyncio.run(runner.run())
     from model_swap_bench.storage.manifests import build_manifest
 
-    fresh = build_manifest(suite, new_run.run_id)
+    fresh = build_manifest(suite, new_run.run_id, suite_dir)
     _warn_drift(old_manifest, fresh)
-    repo.save(new_run, suite)
+    repo.save(new_run, suite, suite_dir=suite_dir)
     output.success(f"reproduced as {new_run.run_id}")
     _print_run_summary(new_run)
     return new_run, _run_exit_code(new_run)
@@ -268,8 +266,7 @@ def pricing_show(path: Path | None) -> None:
     registry = PricingRegistry.load(path)
     output.warn(WARNING)
     rows = [
-        (e.model, e.provider, f"{e.input_price}", f"{e.output_price}", "measured" if e.measured else "estimate")
-        for e in registry.entries
+        (e.model, e.provider, f"{e.input_price}", f"{e.output_price}", "measured" if e.measured else "estimate") for e in registry.entries
     ]
     output.table(f"Pricing (v{registry.version})", ["model", "provider", "in/Mtok", "out/Mtok", "kind"], rows)
 

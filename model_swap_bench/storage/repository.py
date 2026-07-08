@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 from model_swap_bench.config.models import BenchmarkSuite
@@ -10,11 +11,12 @@ from model_swap_bench.errors import StorageError
 from model_swap_bench.results import BenchmarkRun
 from model_swap_bench.security.paths import resolve_within, validate_run_id
 from model_swap_bench.storage import files
-from model_swap_bench.storage.manifests import build_manifest
+from model_swap_bench.storage.manifests import build_manifest, manifest_hash
 from model_swap_bench.storage.sqlite import RunIndex
 
 STORAGE_DIRNAME = ".modelswapbench"
 LATEST = "latest"
+SNAPSHOT_FIXTURES_DIR = "fixtures"
 
 
 class RunRepository:
@@ -44,9 +46,12 @@ class RunRepository:
 
     def save(self, run: BenchmarkRun, suite: BenchmarkSuite, *, suite_dir: Path | None = None) -> Path:
         run_dir = self.run_dir(run.run_id)
-        manifest = build_manifest(suite, run.run_id, suite_dir)
-        files.write_run(run_dir, run, manifest, redact_raw=suite.privacy.redact_inputs_in_reports)
-        (run_dir / "suite.json").write_text(suite.model_dump_json(indent=2), encoding="utf-8")
+        snapshot = self._snapshot_suite(suite, suite_dir=suite_dir, run_dir=run_dir)
+        manifest = build_manifest(snapshot, run.run_id, suite_dir)
+        stored_run = run.model_copy(deep=True)
+        stored_run.manifest_hash = manifest_hash(manifest)
+        files.write_run(run_dir, stored_run, manifest, redact_raw=suite.privacy.redact_inputs_in_reports)
+        (run_dir / "suite.json").write_text(snapshot.model_dump_json(indent=2), encoding="utf-8")
         self.index.upsert(
             {
                 "run_id": run.run_id,
@@ -60,6 +65,23 @@ class RunRepository:
             }
         )
         return run_dir
+
+    def _snapshot_suite(self, suite: BenchmarkSuite, *, suite_dir: Path | None, run_dir: Path) -> BenchmarkSuite:
+        snapshot = suite.model_copy(deep=True)
+        fixtures_dir = run_dir / SNAPSHOT_FIXTURES_DIR
+        for model in snapshot.models:
+            if not model.fixture:
+                continue
+            source = Path(model.fixture)
+            if not source.is_absolute() and suite_dir is not None:
+                source = suite_dir / source
+            if not source.exists():
+                continue
+            fixtures_dir.mkdir(parents=True, exist_ok=True)
+            target = fixtures_dir / f"{model.alias}-{source.name}"
+            shutil.copy2(source, target)
+            model.fixture = f"{SNAPSHOT_FIXTURES_DIR}/{target.name}"
+        return snapshot
 
     def load(self, run_ref: str) -> BenchmarkRun:
         run_id = self.resolve(run_ref)

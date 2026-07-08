@@ -8,6 +8,25 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0a2] - 2026-07-08
+
+### Release infrastructure
+- Reconnected the local `origin` remote to the recreated
+  `sekacorn/ModelSwapBench` repository.
+- Restricted the PyPI release workflow to version-tag pushes and Trusted
+  Publishing through the `pypi` GitHub environment.
+- Added release-time verification that the pushed tag matches the package
+  version before building distributions.
+- Updated project link metadata for the recreated repository.
+
+### Packaging
+- Bumped the package version to `0.1.0a2`.
+- Reconfirmed the Forge dependency range as `agentforge-oss>=0.5.1,<0.6.0`.
+
+### Documentation
+- Documented general PyPI installation separately from editable development
+  installation.
+
 ## [0.1.0a1] — 2026-07-05
 
 ### Added

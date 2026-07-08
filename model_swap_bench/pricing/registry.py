@@ -60,9 +60,7 @@ class PricingRegistry(BaseModel):
             existing.source = source or existing.source
             existing.measured = False
             return existing
-        entry = PricingEntry(
-            model=model, provider=provider, input_price=input_price, output_price=output_price, source=source
-        )
+        entry = PricingEntry(model=model, provider=provider, input_price=input_price, output_price=output_price, source=source)
         self.entries.append(entry)
         return entry
 

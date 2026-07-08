@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "modelswapbench"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "Open-source model portability and replacement benchmark: measure which model delivers an acceptable outcome at the lowest cost, latency, and operational risk."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -44,7 +44,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/sekacorn/ModelSwapBench"
-Repository = "https://github.com/sekacorn/ModelSwapBench.git"
+Repository = "https://github.com/sekacorn/ModelSwapBench"
 Issues = "https://github.com/sekacorn/ModelSwapBench/issues"
 Changelog = "https://github.com/sekacorn/ModelSwapBench/blob/main/CHANGELOG.md"
 Documentation = "https://github.com/sekacorn/ModelSwapBench/tree/main/docs"

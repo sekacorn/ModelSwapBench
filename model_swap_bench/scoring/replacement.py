@@ -41,8 +41,10 @@ def decide_replacement(
     quality_delta = candidate.quality_score - baseline.quality_score
     quality_drop = max(0.0, baseline.quality_score - candidate.quality_score)
     cost_ratio = _cost_reduction_ratio(baseline, candidate)
-    cost_delta = None if baseline.cost_per_success_usd is None or candidate.cost_per_success_usd is None else (
-        candidate.cost_per_success_usd - baseline.cost_per_success_usd
+    cost_delta = (
+        None
+        if baseline.cost_per_success_usd is None or candidate.cost_per_success_usd is None
+        else (candidate.cost_per_success_usd - baseline.cost_per_success_usd)
     )
     latency_delta = candidate.avg_latency_ms - baseline.avg_latency_ms
     reliability_delta = candidate.success_rate - baseline.success_rate
@@ -61,9 +63,7 @@ def decide_replacement(
     # A large success-rate drop is a failure even if per-evaluator quality stays high —
     # never hide a failed case behind an averaged score.
     if -reliability_delta > config.maximum_quality_drop:
-        failed.append(
-            f"success-rate drop {-reliability_delta:.2f} > allowed {config.maximum_quality_drop:.2f}"
-        )
+        failed.append(f"success-rate drop {-reliability_delta:.2f} > allowed {config.maximum_quality_drop:.2f}")
     if config.minimum_reliability is not None and candidate.success_rate < config.minimum_reliability:
         failed.append(f"success rate {candidate.success_rate:.2f} < required {config.minimum_reliability:.2f}")
     if config.maximum_latency_ms is not None and candidate.p95_latency_ms > config.maximum_latency_ms:
@@ -85,8 +85,7 @@ def decide_replacement(
 
     if cascade is not None:
         evidence.append(
-            f"{cascade.final_success_rate * 100:.0f}% success after escalation "
-            f"({cascade.escalation_rate * 100:.0f}% escalated)"
+            f"{cascade.final_success_rate * 100:.0f}% success after escalation ({cascade.escalation_rate * 100:.0f}% escalated)"
         )
 
     # Decision ladder.

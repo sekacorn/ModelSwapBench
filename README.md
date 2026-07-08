@@ -48,6 +48,14 @@ benchmark.yaml ─► config (typed, validated) ─► runner ─► providers �
 
 ## Five-minute offline example (no downloads, no credentials)
 
+Install from PyPI:
+
+```bash
+python -m pip install modelswapbench
+```
+
+Install this repository for development:
+
 ```bash
 git clone https://github.com/sekacorn/ModelSwapBench.git
 cd ModelSwapBench

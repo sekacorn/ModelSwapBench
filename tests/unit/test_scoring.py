@@ -26,23 +26,31 @@ def test_cost_per_success_zero_safe() -> None:
 
 
 def test_token_and_compute_cost() -> None:
-    cand = ModelCandidate(alias="a", provider=ProviderKind.OLLAMA, model="m",
-                          estimated_input_cost_per_million=10.0, estimated_output_cost_per_million=30.0)
+    cand = ModelCandidate(
+        alias="a", provider=ProviderKind.OLLAMA, model="m", estimated_input_cost_per_million=10.0, estimated_output_cost_per_million=30.0
+    )
     assert economics.token_cost(cand, 1_000_000, 0) == 10.0
     zero = economics.compute_cost(ScoringConfig(), 1000)
     assert zero == 0.0
 
 
 def _summary(alias: str, success: float, quality: float, cost_per_success: float | None) -> ModelSummary:
-    return ModelSummary(model_alias=alias, provider="deterministic", deployment="local",
-                        total_cases=5, successful_cases=int(success * 5), success_rate=success,
-                        quality_score=quality, cost_per_success_usd=cost_per_success,
-                        policy_pass_rate=1.0, valid_json_rate=1.0)
+    return ModelSummary(
+        model_alias=alias,
+        provider="deterministic",
+        deployment="local",
+        total_cases=5,
+        successful_cases=int(success * 5),
+        success_rate=success,
+        quality_score=quality,
+        cost_per_success_usd=cost_per_success,
+        policy_pass_rate=1.0,
+        valid_json_rate=1.0,
+    )
 
 
 def _cand(alias: str, hosted: bool = False) -> ModelCandidate:
-    return ModelCandidate(alias=alias, provider=ProviderKind.DETERMINISTIC, model="m",
-                          deployment="hosted" if hosted else "local")
+    return ModelCandidate(alias=alias, provider=ProviderKind.DETERMINISTIC, model="m", deployment="hosted" if hosted else "local")
 
 
 def test_replacement_recommended() -> None:

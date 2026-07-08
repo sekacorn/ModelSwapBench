@@ -66,8 +66,7 @@ def render_markdown(run: BenchmarkRun, *, suite: BenchmarkSuite | None = None) -
     add("")
     if run.replacement_decisions:
         for d in run.replacement_decisions:
-            add(f"- **{d.candidate_model}** vs {d.baseline_model}: **{d.recommendation}** "
-                f"(confidence {d.confidence:.0%}).")
+            add(f"- **{d.candidate_model}** vs {d.baseline_model}: **{d.recommendation}** (confidence {d.confidence:.0%}).")
     else:
         best = max(run.model_summaries, key=lambda s: (s.success_rate, s.quality_score), default=None)
         if best is not None:
@@ -157,9 +156,7 @@ def render_markdown(run: BenchmarkRun, *, suite: BenchmarkSuite | None = None) -
         add("## Failures, errors, and timeouts")
         add("")
         for res in failures:
-            detail = res.error or "; ".join(
-                e.explanation for e in res.evaluations if not e.passed and e.status is not EvalStatus.SKIPPED
-            )
+            detail = res.error or "; ".join(e.explanation for e in res.evaluations if not e.passed and e.status is not EvalStatus.SKIPPED)
             add(f"- `{res.model_alias}` / `{res.case_id}` — {res.status.value}: {detail[:200]}")
         add("")
 

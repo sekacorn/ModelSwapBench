@@ -57,11 +57,7 @@ class ExecutionContext:
     max_tokens: int = 1024
 
     def build_request(self, model: ModelCandidate, case: BenchmarkCase) -> ProviderRequest:
-        timeout = (
-            case.timeout_override
-            or model.timeout_seconds
-            or self.suite.execution.timeout_seconds
-        )
+        timeout = case.timeout_override or model.timeout_seconds or self.suite.execution.timeout_seconds
         tools = list(dict.fromkeys([*case.expected_tool_calls, *case.forbidden_tools]))
         return ProviderRequest(
             model_id=model.model,

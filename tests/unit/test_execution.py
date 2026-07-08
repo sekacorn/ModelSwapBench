@@ -17,8 +17,13 @@ async def test_deterministic_run_all_pass(suite) -> None:  # type: ignore[no-unt
 async def test_malformed_json_marks_failed() -> None:
     d = make_suite_dict()
     d["models"] = [
-        {"alias": "m", "provider": "deterministic", "model": "x", "deployment": "test",
-         "metadata": {"strategy": "static", "output": "not json"}},
+        {
+            "alias": "m",
+            "provider": "deterministic",
+            "model": "x",
+            "deployment": "test",
+            "metadata": {"strategy": "static", "output": "not json"},
+        },
     ]
     d["baseline_model"] = "m"
     d.pop("replacement")
@@ -37,15 +42,18 @@ async def test_cascade_escalation() -> None:
     d = {
         "name": "casc",
         "models": [
-            {"alias": "first", "provider": "deterministic", "model": "s", "deployment": "local",
-             "metadata": {"strategy": "static", "output": "not json"}},
-            {"alias": "strong", "provider": "deterministic", "model": "b", "deployment": "test",
-             "metadata": {"strategy": "oracle"}},
+            {
+                "alias": "first",
+                "provider": "deterministic",
+                "model": "s",
+                "deployment": "local",
+                "metadata": {"strategy": "static", "output": "not json"},
+            },
+            {"alias": "strong", "provider": "deterministic", "model": "b", "deployment": "test", "metadata": {"strategy": "oracle"}},
         ],
         "cases": [{"id": "c1", "input": {"m": "x"}, "expected": {"a": 1}}],
         "evaluators": ["json_parse", "field_match"],
-        "cascade": {"first_stage": "first", "escalation_model": "strong",
-                    "conditions": ["invalid_json", "evaluator_failure"]},
+        "cascade": {"first_stage": "first", "escalation_model": "strong", "conditions": ["invalid_json", "evaluator_failure"]},
         "constraints": {"minimum_success_rate": 0.5},
     }
     suite = build_suite(d)
@@ -61,8 +69,17 @@ async def test_retry_on_transient_error(tmp_path) -> None:  # type: ignore[no-un
     fx.write_text("cases:\n  c1: {status: error}\n", encoding="utf-8")
     d = {
         "name": "retry",
-        "models": [{"alias": "m", "provider": "deterministic", "model": "x", "deployment": "test",
-                    "fixture": str(fx), "retries": 2, "metadata": {"strategy": "fixture"}}],
+        "models": [
+            {
+                "alias": "m",
+                "provider": "deterministic",
+                "model": "x",
+                "deployment": "test",
+                "fixture": str(fx),
+                "retries": 2,
+                "metadata": {"strategy": "fixture"},
+            }
+        ],
         "cases": [{"id": "c1", "input": {"m": "x"}, "expected": {"a": 1}}],
         "evaluators": ["json_parse"],
         "execution": {"retries": 2},

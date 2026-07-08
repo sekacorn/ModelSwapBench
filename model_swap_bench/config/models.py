@@ -26,9 +26,7 @@ class ProviderKind(str, Enum):
 
 
 #: Providers that may transmit benchmark data off the local machine.
-HOSTED_PROVIDERS: frozenset[ProviderKind] = frozenset(
-    {ProviderKind.OPENAI, ProviderKind.ANTHROPIC, ProviderKind.BEDROCK}
-)
+HOSTED_PROVIDERS: frozenset[ProviderKind] = frozenset({ProviderKind.OPENAI, ProviderKind.ANTHROPIC, ProviderKind.BEDROCK})
 
 
 class DeploymentType(str, Enum):

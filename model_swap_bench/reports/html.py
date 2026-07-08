@@ -24,7 +24,7 @@ def render_html(run: BenchmarkRun) -> str:
     body = html.escape(markdown_source)
     title = html.escape(f"ModelSwapBench — {run.suite_name}")
     return (
-        "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"
+        '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         f"<title>{title}</title>\n<style>{_STYLE}</style>\n</head>\n<body>\n"
         f"<h1>{title}</h1>\n<pre>{body}</pre>\n</body>\n</html>\n"
     )

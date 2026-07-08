@@ -33,8 +33,7 @@ def should_escalate(
         if cond is CascadeCondition.LOW_SCORE and result.quality_score < cfg_low_score:
             return True
         if cond is CascadeCondition.POLICY_FAILURE and any(
-            e.evaluator == "policy_compliance" and not e.passed and e.status is not EvalStatus.SKIPPED
-            for e in result.evaluations
+            e.evaluator == "policy_compliance" and not e.passed and e.status is not EvalStatus.SKIPPED for e in result.evaluations
         ):
             return True
         if cond is CascadeCondition.LOW_CONFIDENCE and result.evaluations:

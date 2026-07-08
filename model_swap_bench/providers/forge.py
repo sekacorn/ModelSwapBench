@@ -40,9 +40,7 @@ class ForgeProviderAdapter(Provider):
             try:
                 from forge import OllamaProvider as ForgeOllama
             except ImportError as exc:  # pragma: no cover - forge is a hard dependency
-                raise ProviderUnavailableError(
-                    "agentforge-oss is not installed; install modelswapbench with its dependencies"
-                ) from exc
+                raise ProviderUnavailableError("agentforge-oss is not installed; install modelswapbench with its dependencies") from exc
             self._provider = ForgeOllama(self._base_url, timeout=self._timeout)
         return self._provider
 

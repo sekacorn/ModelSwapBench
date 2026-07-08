@@ -20,10 +20,9 @@ _MS_PER_HOUR = 3_600_000.0
 
 def token_cost(candidate: ModelCandidate, input_tokens: int, output_tokens: int) -> float:
     """Token-based marginal cost in USD from the candidate's per-million prices."""
-    return (
-        (input_tokens / 1_000_000.0) * candidate.estimated_input_cost_per_million
-        + (output_tokens / 1_000_000.0) * candidate.estimated_output_cost_per_million
-    )
+    return (input_tokens / 1_000_000.0) * candidate.estimated_input_cost_per_million + (
+        output_tokens / 1_000_000.0
+    ) * candidate.estimated_output_cost_per_million
 
 
 def compute_cost(scoring: ScoringConfig, latency_ms: float) -> float:

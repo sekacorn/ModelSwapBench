@@ -13,11 +13,11 @@ from typing import Any
 _PLACEHOLDER = "«redacted»"
 
 _PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"\bsk-[A-Za-z0-9_-]{16,}\b"),          # OpenAI-style keys
-    re.compile(r"\bBearer\s+[A-Za-z0-9._-]{16,}\b"),   # bearer tokens
-    re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"),   # slack-style
-    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),               # AWS access key id
-    re.compile(r"\bghp_[A-Za-z0-9]{20,}\b"),           # github token
+    re.compile(r"\bsk-[A-Za-z0-9_-]{16,}\b"),  # OpenAI-style keys
+    re.compile(r"\bBearer\s+[A-Za-z0-9._-]{16,}\b"),  # bearer tokens
+    re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"),  # slack-style
+    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),  # AWS access key id
+    re.compile(r"\bghp_[A-Za-z0-9]{20,}\b"),  # github token
 ]
 
 _SENSITIVE_KEYS = frozenset({"api_key", "apikey", "authorization", "password", "secret", "token"})

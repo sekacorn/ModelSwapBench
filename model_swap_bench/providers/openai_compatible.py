@@ -45,10 +45,7 @@ class OpenAICompatibleProvider(Provider):
     def __init__(self, candidate: ModelCandidate, *, allow_hosted: bool = False) -> None:
         super().__init__(candidate)
         if not candidate.base_url:
-            raise ConfigError(
-                f"model {candidate.alias!r}: openai_compatible provider requires a base_url "
-                "(e.g. http://localhost:8000/v1)"
-            )
+            raise ConfigError(f"model {candidate.alias!r}: openai_compatible provider requires a base_url (e.g. http://localhost:8000/v1)")
         self._base_url = candidate.base_url.rstrip("/")
         self._is_local = endpoint_is_local(self._base_url)
         if not self._is_local and not allow_hosted:

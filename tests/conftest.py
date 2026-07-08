@@ -18,11 +18,22 @@ def make_suite_dict(**overrides: Any) -> dict[str, Any]:
         "version": "1.0",
         "baseline_model": "baseline",
         "models": [
-            {"alias": "baseline", "provider": "deterministic", "model": "base", "deployment": "test",
-             "estimated_input_cost_per_million": 5.0, "estimated_output_cost_per_million": 15.0,
-             "metadata": {"strategy": "oracle", "latency_ms": 100}},
-            {"alias": "candidate", "provider": "deterministic", "model": "cand", "deployment": "local",
-             "metadata": {"strategy": "oracle", "latency_ms": 10}},
+            {
+                "alias": "baseline",
+                "provider": "deterministic",
+                "model": "base",
+                "deployment": "test",
+                "estimated_input_cost_per_million": 5.0,
+                "estimated_output_cost_per_million": 15.0,
+                "metadata": {"strategy": "oracle", "latency_ms": 100},
+            },
+            {
+                "alias": "candidate",
+                "provider": "deterministic",
+                "model": "cand",
+                "deployment": "local",
+                "metadata": {"strategy": "oracle", "latency_ms": 10},
+            },
         ],
         "cases": [
             {"id": "c1", "input": {"message": "hi"}, "expected": {"category": "billing", "escalation_required": True}},
@@ -30,8 +41,7 @@ def make_suite_dict(**overrides: Any) -> dict[str, Any]:
         ],
         "evaluators": ["json_parse", "json_schema", "field_match"],
         "constraints": {"minimum_success_rate": 0.8, "require_valid_json_rate": 0.9},
-        "replacement": {"baseline": "baseline", "candidates": ["candidate"],
-                        "maximum_quality_drop": 0.05, "minimum_cost_reduction": 0.2},
+        "replacement": {"baseline": "baseline", "candidates": ["candidate"], "maximum_quality_drop": 0.05, "minimum_cost_reduction": 0.2},
     }
     base.update(overrides)
     return base

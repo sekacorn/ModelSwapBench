@@ -116,6 +116,5 @@ def build_provider(
             "Enable it explicitly with privacy.allow_hosted_providers and --allow-hosted."
         )
     raise ProviderUnavailableError(
-        f"Provider {kind.value!r} is not implemented in v0.1. "
-        "Deterministic, Ollama, Forge, and OpenAI-compatible providers are supported."
+        f"Provider {kind.value!r} is not implemented in v0.1. Deterministic, Ollama, Forge, and OpenAI-compatible providers are supported."
     )
