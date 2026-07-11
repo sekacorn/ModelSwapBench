@@ -8,6 +8,26 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0a3] - 2026-07-11
+
+### Added
+- Added the offline-first AI Vendor Exit Report for baseline-vs-candidate model
+  migration decisions.
+- Added `modelswapbench exit-report` with Markdown and JSON output formats.
+- Added typed exit-report structures and deterministic rule-based decisions for
+  quality retention, cost reduction, latency change, operational risk, evidence
+  sufficiency, and run reliability.
+- Added deterministic vendor-exit example input and sample Markdown report.
+- Added documentation for interpreting report metrics, risk profiles, and
+  limitations.
+
+### Fixed
+- Missing cost data is reported as `Unknown` rather than treated as zero.
+- Zero or missing baseline quality is handled without divide-by-zero behavior.
+- Exit-report Markdown escapes user-controlled model, workload, and evidence
+  fields before rendering.
+- Exit-report numeric thresholds reject non-finite and negative values.
+
 ## [0.1.0a2] - 2026-07-08
 
 ### Release infrastructure

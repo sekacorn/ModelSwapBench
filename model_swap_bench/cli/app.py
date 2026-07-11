@@ -164,6 +164,41 @@ def report(
     commands.report(run_id, fmt=fmt, out=output_file, root=output_dir)
 
 
+@app.command("exit-report")
+@guard
+def exit_report(
+    baseline: Annotated[str, typer.Option("--baseline", help="Baseline provider:model, model, or label.")],
+    candidate: Annotated[str, typer.Option("--candidate", help="Candidate provider:model, model, or label.")],
+    input_file: Annotated[Path, typer.Option("--input", help="Benchmark summary JSON or JSONL fixture.")],
+    output_file: Annotated[Path, typer.Option("--output", help="Report output path.")],
+    fmt: Annotated[str, typer.Option("--format", help="markdown|json")] = "markdown",
+    title: Annotated[str, typer.Option("--title", help="Report title.")] = "AI Vendor Exit Report",
+    workload: Annotated[str | None, typer.Option("--workload", help="Workload label.")] = None,
+    risk_profile: Annotated[str, typer.Option("--risk-profile", help="low|medium|high|regulated")] = "medium",
+    min_quality_retention: Annotated[
+        float, typer.Option("--min-quality-retention", help="Minimum acceptable quality retention percentage.")
+    ] = 80.0,
+    max_latency_increase: Annotated[
+        float, typer.Option("--max-latency-increase", help="Maximum acceptable latency increase percentage.")
+    ] = 50.0,
+    min_cost_reduction: Annotated[float, typer.Option("--min-cost-reduction", help="Minimum expected cost reduction percentage.")] = 20.0,
+) -> None:
+    """Generate an offline AI Vendor Exit Report."""
+    commands.exit_report(
+        baseline=baseline,
+        candidate=candidate,
+        input_file=input_file,
+        output_file=output_file,
+        fmt=fmt,
+        title=title,
+        workload=workload,
+        risk_profile=risk_profile,
+        min_quality_retention=min_quality_retention,
+        max_latency_increase=max_latency_increase,
+        min_cost_reduction=min_cost_reduction,
+    )
+
+
 @app.command()
 @guard
 def reproduce(

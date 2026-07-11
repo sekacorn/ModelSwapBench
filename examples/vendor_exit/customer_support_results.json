@@ -1,0 +1,25 @@
+{
+  "workload": "Customer support triage",
+  "summaries": [
+    {
+      "provider": "openai",
+      "model": "gpt-4o",
+      "label": "openai:gpt-4o",
+      "score": "0.92",
+      "average_latency_ms": "1250",
+      "estimated_cost_usd": "24.00",
+      "sample_count": 50,
+      "failure_count": 2
+    },
+    {
+      "provider": "ollama",
+      "model": "qwen2.5:3b",
+      "label": "ollama:qwen2.5:3b",
+      "score": "0.84",
+      "average_latency_ms": "980",
+      "estimated_cost_usd": "3.20",
+      "sample_count": 50,
+      "failure_count": 4
+    }
+  ]
+}

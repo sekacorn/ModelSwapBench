@@ -3,17 +3,24 @@
 from __future__ import annotations
 
 import asyncio
+from decimal import Decimal
 from pathlib import Path
 
 from model_swap_bench.cli import output
 from model_swap_bench.config import load_suite, schema_json
 from model_swap_bench.config.models import BenchmarkSuite, ProviderKind
-from model_swap_bench.errors import ExitCode, ProviderUnavailableError
+from model_swap_bench.errors import ConfigError, ExitCode, ProviderUnavailableError
 from model_swap_bench.evaluators import registered_names
 from model_swap_bench.execution import BenchmarkRunner
 from model_swap_bench.pricing import WARNING, PricingRegistry
 from model_swap_bench.providers.base import build_provider
 from model_swap_bench.reports import RENDERERS
+from model_swap_bench.reports.exit_report import (
+    ExitReportThresholds,
+    build_exit_report,
+    render_exit_report_json,
+    render_exit_report_markdown,
+)
 from model_swap_bench.results import BenchmarkRun, CaseStatus
 from model_swap_bench.storage import RunRepository
 
@@ -174,6 +181,48 @@ def report(run_ref: str, *, fmt: str, out: Path | None, root: Path | None) -> No
         output.info(text)
 
 
+def exit_report(
+    *,
+    baseline: str,
+    candidate: str,
+    input_file: Path,
+    output_file: Path,
+    fmt: str,
+    title: str,
+    workload: str | None,
+    risk_profile: str,
+    min_quality_retention: float,
+    max_latency_increase: float,
+    min_cost_reduction: float,
+) -> None:
+    if fmt not in {"markdown", "json"}:
+        raise ConfigError("unknown exit-report format; choose markdown or json")
+    thresholds = ExitReportThresholds(
+        min_quality_retention_pct=Decimal(str(min_quality_retention)),
+        max_latency_increase_pct=Decimal(str(max_latency_increase)),
+        min_cost_reduction_pct=Decimal(str(min_cost_reduction)),
+    )
+    command = (
+        "modelswapbench exit-report "
+        f"--baseline {baseline} --candidate {candidate} --input {input_file} --output {output_file} --format {fmt}"
+    )
+    report_payload = build_exit_report(
+        input_path=input_file,
+        baseline_ref=baseline,
+        candidate_ref=candidate,
+        title=title,
+        workload=workload,
+        risk_profile=risk_profile,
+        thresholds=thresholds,
+        cli_command=command,
+    )
+    text = render_exit_report_markdown(report_payload) if fmt == "markdown" else render_exit_report_json(report_payload)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    output_file.write_text(text, encoding="utf-8")
+    output.success(f"exit report written to {output_file}")
+    output.info(f"Decision: {report_payload.decision.decision.value}")
+
+
 def compare(run_ref: str, *, root: Path | None) -> ExitCode:
     repo = RunRepository(root or Path.cwd())
     run_result = repo.load(run_ref)
@@ -299,6 +348,7 @@ EXAMPLES = [
     ("local-rag-citations", "Grounded answers with citation checking (offline fixtures / local Ollama)."),
     ("code-review-summary", "Structured severity + required remediation; forbids 'fully secure' claims."),
     ("cascade-routing", "Cheap local model first, escalate failures to a stronger fixture model."),
+    ("vendor_exit", "AI Vendor Exit Report input and sample Markdown output."),
 ]
 
 

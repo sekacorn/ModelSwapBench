@@ -70,6 +70,9 @@ modelswapbench validate examples/support-ticket-triage/benchmark.yaml
 modelswapbench run examples/support-ticket-triage/benchmark.yaml
 modelswapbench report latest --format markdown
 modelswapbench compare latest
+modelswapbench exit-report --baseline openai:gpt-4o --candidate ollama:qwen2.5:3b \
+  --input examples/vendor_exit/customer_support_results.json \
+  --output reports/vendor_exit_report.md --format markdown
 ```
 
 The first example runs entirely with the **deterministic provider** — no paid
@@ -126,6 +129,45 @@ aggregate score. Possible outcomes: recommended replacement · recommended with
 conditions · suitable as first-stage model with escalation · not recommended ·
 insufficient evidence.
 
+## AI Vendor Exit Report
+
+`modelswapbench exit-report` creates a CTO-friendly migration report from
+deterministic benchmark summaries or fixture JSONL data. It answers whether a
+candidate model appears good enough to replace a baseline model for a specific
+workload, with quality retention, estimated cost reduction, latency change, risk
+profile, limitations, and reproducibility details.
+
+```bash
+modelswapbench exit-report \
+  --baseline openai:gpt-4o \
+  --candidate ollama:qwen2.5:3b \
+  --input examples/vendor_exit/customer_support_results.json \
+  --output reports/vendor_exit_report.md \
+  --format markdown \
+  --risk-profile medium
+```
+
+Sample excerpt:
+
+```markdown
+# AI Vendor Exit Report
+
+## Decision
+
+**Candidate acceptable**
+
+## Cost
+
+- Caveat: estimated cost is not invoice-confirmed.
+- Caveat: projected savings are not realized savings.
+```
+
+This helps reduce vendor lock-in by separating the replacement decision from
+provider marketing: the organization can inspect its own workload evidence,
+thresholds, and risk boundaries before migration. Passing the report does not
+prove legal, regulatory, safety, or security compliance, and human review may
+still be required for high-risk workflows.
+
 ## Cascade strategy
 
 Run a cheap/local model first and escalate only failing or low-confidence cases to
@@ -150,7 +192,7 @@ sole evaluator; judge-model mode on the roadmap).
 ## CLI
 
 `doctor` · `init` · `validate` · `schema` · `models` · `providers` · `run` ·
-`compare` · `report` · `runs list|show` · `reproduce` · `clean` ·
+`compare` · `report` · `exit-report` · `runs list|show` · `reproduce` · `clean` ·
 `pricing show|validate|set` · `examples list`.
 
 Exit codes: `0` success · `1` constraints failed · `2` invalid input ·
