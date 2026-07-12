@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from decimal import Decimal
 from pathlib import Path
@@ -14,12 +15,16 @@ from model_swap_bench.reports.exit_report import (
     ExitDecision,
     ExitReportThresholds,
     ModelIdentity,
+    build_aimeter_export,
+    build_audit_events,
     build_exit_report,
     cost_reduction_pct,
     decide_exit,
     load_exit_summaries,
     parse_identity,
     quality_retention_pct,
+    render_aimeter_export_json,
+    render_audit_events_jsonl,
     render_exit_report_json,
     render_exit_report_markdown,
     select_summary,
@@ -272,6 +277,107 @@ def test_error_paths_and_json_renderer(tmp_path: Path) -> None:
     assert "Cost is unknown" in render_exit_report_markdown(report)
     assert '"decision"' in render_exit_report_json(report)
 
+    aimeter = json.loads(render_aimeter_export_json(build_aimeter_export(report)))
+    assert aimeter["cost"]["candidate_estimated_cost"]["known"] is False
+    assert aimeter["cost"]["candidate_estimated_cost"]["amount"] is None
+    assert aimeter["cost"]["estimated_cost_reduction_pct"] is None
+
+
+def test_aimeter_export_shape_and_decimal_safe_money(tmp_path: Path) -> None:
+    path = tmp_path / "results.json"
+    path.write_text(
+        json.dumps(
+            {
+                "workload": "Customer support",
+                "summaries": [
+                    {
+                        "provider": "openai",
+                        "model": "gpt-4o",
+                        "score": "0.90",
+                        "average_latency_ms": "1000",
+                        "estimated_cost_usd": "0.30",
+                        "sample_count": 5,
+                        "failure_count": 0,
+                    },
+                    {
+                        "provider": "ollama",
+                        "model": "qwen2.5:3b",
+                        "score": "0.81",
+                        "average_latency_ms": "900",
+                        "estimated_cost_usd": "0.10",
+                        "sample_count": 5,
+                        "failure_count": 0,
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    report = build_exit_report(input_path=path, baseline_ref="openai:gpt-4o", candidate_ref="ollama:qwen2.5:3b")
+    payload = json.loads(render_aimeter_export_json(build_aimeter_export(report)))
+    for key in ("baseline", "candidate", "quality", "cost", "latency", "limitations"):
+        assert key in payload
+    assert payload["outcome"]["decision"] == "Candidate acceptable"
+    assert payload["cost"]["baseline_estimated_cost"]["amount"] == "0.3000"
+    assert payload["cost"]["candidate_estimated_cost"]["amount"] == "0.1000"
+    assert "0.30000000000000004" not in json.dumps(payload)
+
+
+def test_audit_events_jsonl_and_hash_chain(tmp_path: Path) -> None:
+    path = tmp_path / "results.json"
+    path.write_text(
+        json.dumps(
+            {
+                "summaries": [
+                    {
+                        "provider": "openai",
+                        "model": "gpt-4o",
+                        "score": "0.90",
+                        "average_latency_ms": "1000",
+                        "estimated_cost_usd": "10.00",
+                        "sample_count": 5,
+                        "failure_count": 0,
+                    },
+                    {
+                        "provider": "ollama",
+                        "model": "qwen2.5:3b",
+                        "score": "0.82",
+                        "average_latency_ms": "800",
+                        "estimated_cost_usd": "2.00",
+                        "sample_count": 5,
+                        "failure_count": 0,
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    report = build_exit_report(input_path=path, baseline_ref="openai:gpt-4o", candidate_ref="ollama:qwen2.5:3b")
+    events = [json.loads(line) for line in render_audit_events_jsonl(build_audit_events(report, run_id="run-123")).splitlines()]
+    assert len(events) == 5
+    assert {event["event_type"] for event in events} >= {
+        "vendor_exit_report_started",
+        "model_comparison_loaded",
+        "thresholds_evaluated",
+        "vendor_exit_decision_recorded",
+        "report_generated",
+    }
+    assert all(event["run_id"] == "run-123" for event in events)
+    assert "compliance" not in json.dumps(events).lower()
+    assert "non-repudiation" not in json.dumps(events).lower()
+
+    previous_hash = None
+    for event in events:
+        assert event["previous_hash"] == previous_hash
+        expected = event["event_hash"]
+        event_for_hash = dict(event)
+        event_for_hash.pop("event_hash")
+        event_for_hash["integrity"] = dict(event_for_hash["integrity"])
+        event_for_hash["integrity"].pop("event_digest")
+        canonical = json.dumps(event_for_hash, sort_keys=True, separators=(",", ":"))
+        assert hashlib.sha256(canonical.encode("utf-8")).hexdigest() == expected
+        previous_hash = expected
+
 
 def test_markdown_escapes_user_controlled_values(tmp_path: Path) -> None:
     path = tmp_path / "evil.json"
@@ -356,6 +462,8 @@ def test_invalid_thresholds_and_risk_profile_are_rejected(tmp_path: Path) -> Non
 def test_cli_exit_report_smoke_and_no_personal_identity(tmp_path: Path) -> None:
     input_path = tmp_path / "results.json"
     output_path = tmp_path / "exit.md"
+    aimeter_path = tmp_path / "aimeter.json"
+    audit_path = tmp_path / "audit.jsonl"
     input_path.write_text(
         json.dumps(
             {
@@ -395,6 +503,12 @@ def test_cli_exit_report_smoke_and_no_personal_identity(tmp_path: Path) -> None:
             str(input_path),
             "--output",
             str(output_path),
+            "--export-aimeter",
+            str(aimeter_path),
+            "--export-auditlog",
+            str(audit_path),
+            "--run-id",
+            "cli-run",
         ],
     )
     assert result.exit_code == 0
@@ -402,6 +516,13 @@ def test_cli_exit_report_smoke_and_no_personal_identity(tmp_path: Path) -> None:
     assert "AI Vendor Exit Report" in text
     assert "Candidate acceptable" in text
     assert "@" not in text
+    aimeter_payload = json.loads(aimeter_path.read_text(encoding="utf-8"))
+    assert aimeter_payload["baseline"]["provider"] == "openai"
+    assert aimeter_payload["candidate"]["provider"] == "ollama"
+    assert aimeter_payload["outcome"]["decision"] == "Candidate acceptable"
+    audit_events = [json.loads(line) for line in audit_path.read_text(encoding="utf-8").splitlines()]
+    assert all(event["run_id"] == "cli-run" and event["event_type"] for event in audit_events)
+    assert all("@" not in json.dumps(event) for event in audit_events)
 
     json_output = tmp_path / "exit.json"
     json_result = runner.invoke(

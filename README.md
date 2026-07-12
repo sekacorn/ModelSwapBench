@@ -144,8 +144,19 @@ modelswapbench exit-report \
   --input examples/vendor_exit/customer_support_results.json \
   --output reports/vendor_exit_report.md \
   --format markdown \
-  --risk-profile medium
+  --risk-profile medium \
+  --export-aimeter reports/aimeter_summary.json \
+  --export-auditlog reports/audit_events.jsonl
 ```
+
+Portable exports:
+
+- `--export-aimeter PATH` writes an AIMeter OSS-style JSON summary for estimated cost, efficiency, latency, decision, and outcome measurement workflows.
+- `--export-auditlog PATH` writes AIAuditLog-style JSONL audit events for carrying vendor-exit evidence into audit-review workflows.
+
+These exports are deterministic, offline-first, and file-based. They do not add
+runtime dependencies on AIMeter OSS or AIAuditLog, and they do not automatically
+prove compliance.
 
 Sample excerpt:
 

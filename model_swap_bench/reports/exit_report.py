@@ -6,6 +6,7 @@ JSONL fixture rows and produces a rule-based decision with transparent caveats.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import platform
 from datetime import UTC, datetime
@@ -148,6 +149,46 @@ class VendorExitReport(_Strict):
     python_version: str = Field(default_factory=platform.python_version)
     platform: str = Field(default_factory=platform.platform)
     limitations: list[str] = Field(default_factory=list)
+
+
+class AIMeterExport(_Strict):
+    """Portable AIMeter OSS-style cost/outcome summary."""
+
+    schema_version: str = "modelswapbench.aimeter-export.v1"
+    generated_at: datetime
+    source: dict[str, Any]
+    workload: str
+    baseline: dict[str, Any]
+    candidate: dict[str, Any]
+    quality: dict[str, Any]
+    cost: dict[str, Any]
+    latency: dict[str, Any]
+    outcome: dict[str, Any]
+    limitations: list[str]
+
+
+class AIAuditEvent(_Strict):
+    """Portable AIAuditLog-style audit event for vendor-exit evidence."""
+
+    schema_version: str = "modelswapbench.audit-event.v1"
+    event_id: str
+    event_type: str
+    event_time: datetime
+    recorded_time: datetime
+    timestamp: datetime
+    actor: dict[str, Any]
+    system_id: str
+    run_id: str
+    source: dict[str, Any]
+    subject: dict[str, Any]
+    action: str
+    outcome: dict[str, Any]
+    data: dict[str, Any]
+    details: dict[str, Any]
+    correlation: dict[str, Any]
+    integrity: dict[str, Any] = Field(default_factory=dict)
+    previous_hash: str | None = None
+    event_hash: str | None = None
 
 
 def parse_identity(value: str) -> ModelIdentity:
@@ -596,3 +637,221 @@ def _cost_difference(baseline: BenchmarkSummary, candidate: BenchmarkSummary) ->
 def render_exit_report_json(report: VendorExitReport, *, indent: int = 2) -> str:
     """Render a machine-readable JSON exit report."""
     return json.dumps(report.model_dump(mode="json"), indent=indent, default=str)
+
+
+def _decimal_string(value: Decimal | None, places: str | None = None) -> str | None:
+    if value is None:
+        return None
+    if places is None:
+        return str(value)
+    return str(value.quantize(Decimal(places), rounding=ROUND_HALF_UP))
+
+
+def _money_payload(value: Decimal | None) -> dict[str, str | bool | None]:
+    return {
+        "amount": _decimal_string(value, "0.0001"),
+        "currency": "USD",
+        "known": value is not None,
+        "basis": "estimated" if value is not None else "unknown",
+        "invoice_confirmed": False,
+    }
+
+
+def _model_payload(summary: BenchmarkSummary) -> dict[str, Any]:
+    return {
+        "provider": summary.model.provider,
+        "model": summary.model.model,
+        "label": summary.model.display_name,
+        "identifier": summary.model.identifier,
+        "sample_count": summary.sample_count,
+        "failure_count": summary.failure_count,
+    }
+
+
+def build_aimeter_export(report: VendorExitReport) -> AIMeterExport:
+    """Build an AIMeter OSS-style export without adding a package dependency."""
+    baseline_cost = report.baseline.estimated_cost_usd
+    candidate_cost = report.candidate.estimated_cost_usd
+    cost_delta = _cost_difference(report.baseline, report.candidate)
+    return AIMeterExport(
+        generated_at=report.generated_at,
+        source={
+            "service": "modelswapbench",
+            "component": "exit-report",
+            "version": report.package_version,
+            "input_path": report.source_path,
+            "export_type": "aimeter-oss-style-cost-outcome-summary",
+            "integration_mode": "offline-file-export",
+        },
+        workload=report.workload,
+        baseline=_model_payload(report.baseline),
+        candidate=_model_payload(report.candidate),
+        quality={
+            "baseline_score": _decimal_string(report.baseline.score),
+            "candidate_score": _decimal_string(report.candidate.score),
+            "quality_retention_pct": _decimal_string(report.decision.quality_retention_pct, "0.01"),
+        },
+        cost={
+            "baseline_estimated_cost": _money_payload(baseline_cost),
+            "candidate_estimated_cost": _money_payload(candidate_cost),
+            "estimated_cost_delta": _money_payload(cost_delta),
+            "estimated_cost_reduction_pct": _decimal_string(report.decision.cost_reduction_pct, "0.01"),
+            "projected_savings_realized": False,
+        },
+        latency={
+            "baseline_average_latency_ms": _decimal_string(report.baseline.average_latency_ms, "0.01"),
+            "candidate_average_latency_ms": _decimal_string(report.candidate.average_latency_ms, "0.01"),
+            "latency_delta_pct": _decimal_string(report.decision.latency_delta_pct, "0.01"),
+        },
+        outcome={
+            "decision": report.decision.decision.value,
+            "recommendation": report.decision.recommendation,
+            "risk_level": report.decision.risk_level.value,
+            "reasons": report.decision.reasons,
+            "warnings": report.decision.warnings,
+        },
+        limitations=report.limitations
+        + [
+            "This is an AIMeter OSS-style portable export, not a live AIMeter runtime integration.",
+            "Missing pricing is represented as unknown and is not treated as zero.",
+        ],
+    )
+
+
+def render_aimeter_export_json(export: AIMeterExport, *, indent: int = 2) -> str:
+    """Render an AIMeter OSS-style export as JSON."""
+    return json.dumps(export.model_dump(mode="json"), indent=indent, default=str)
+
+
+def _default_run_id(report: VendorExitReport) -> str:
+    seed = "|".join(
+        [
+            report.workload,
+            report.source_path,
+            report.baseline.model.identifier,
+            report.candidate.model.identifier,
+            report.generated_at.isoformat(),
+        ]
+    )
+    return f"vendor-exit-{hashlib.sha256(seed.encode('utf-8')).hexdigest()[:12]}"
+
+
+def _audit_event_hash(event: dict[str, Any]) -> str:
+    canonical_event = dict(event)
+    canonical_event.pop("event_hash", None)
+    canonical_event["integrity"] = dict(canonical_event.get("integrity") or {})
+    canonical_event["integrity"].pop("event_digest", None)
+    canonical = json.dumps(canonical_event, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def build_audit_events(
+    report: VendorExitReport,
+    *,
+    run_id: str | None = None,
+    system_id: str = "modelswapbench",
+    actor: str = "modelswapbench-cli",
+    hash_chain: bool = True,
+    include_aimeter_export_event: bool = False,
+) -> list[AIAuditEvent]:
+    """Build AIAuditLog-style JSONL events for the vendor-exit report."""
+    selected_run_id = run_id or _default_run_id(report)
+    audit_actor = {"actor_id": actor, "actor_type": "system"}
+    audit_source = {
+        "service": "modelswapbench",
+        "component": "exit-report",
+        "version": report.package_version,
+        "integration_mode": "offline-file-export",
+    }
+    audit_subject = {
+        "subject_type": "vendor_exit_report",
+        "subject_id": selected_run_id,
+        "classification": "example-evidence",
+    }
+    audit_correlation = {"run_id": selected_run_id, "workflow_id": "ai-vendor-exit-report"}
+    event_specs: list[tuple[str, str, str, dict[str, Any]]] = [
+        (
+            "vendor_exit_report_started",
+            "start",
+            "Vendor exit report generation started.",
+            {"workload": report.workload, "input_path": report.source_path},
+        ),
+        (
+            "model_comparison_loaded",
+            "load",
+            "Model comparison data loaded.",
+            {"baseline": _model_payload(report.baseline), "candidate": _model_payload(report.candidate)},
+        ),
+        (
+            "thresholds_evaluated",
+            "evaluate",
+            "Thresholds evaluated against comparison results.",
+            report.thresholds.model_dump(mode="json"),
+        ),
+        (
+            "vendor_exit_decision_recorded",
+            "record",
+            report.decision.decision.value,
+            {
+                "decision": report.decision.decision.value,
+                "recommendation": report.decision.recommendation,
+                "quality_retention_pct": _decimal_string(report.decision.quality_retention_pct, "0.01"),
+                "estimated_cost_reduction_pct": _decimal_string(report.decision.cost_reduction_pct, "0.01"),
+                "latency_delta_pct": _decimal_string(report.decision.latency_delta_pct, "0.01"),
+            },
+        ),
+        (
+            "report_generated",
+            "generate",
+            "AI Vendor Exit Report generated.",
+            {"format": "markdown-or-json", "limitations_count": len(report.limitations)},
+        ),
+    ]
+    if include_aimeter_export_event:
+        event_specs.append(
+            (
+                "aimeter_export_generated",
+                "export",
+                "AIMeter OSS-style cost/outcome export generated.",
+                {"export_type": "aimeter-oss-style-cost-outcome-summary"},
+            )
+        )
+
+    previous_hash: str | None = None
+    events = []
+    for sequence, (event_type, action, reason, details) in enumerate(event_specs, start=1):
+        event = AIAuditEvent(
+            event_id=f"{selected_run_id}-{sequence:04d}",
+            event_type=event_type,
+            event_time=report.generated_at,
+            recorded_time=report.generated_at,
+            timestamp=report.generated_at,
+            actor=audit_actor,
+            system_id=system_id,
+            run_id=selected_run_id,
+            source=audit_source,
+            subject=audit_subject,
+            action=action,
+            outcome={"status": "success", "code": "COMPLETED", "reason": reason},
+            data=details,
+            details=details,
+            correlation=audit_correlation,
+            integrity={"sequence": sequence, "digest_algorithm": "sha256", "chain_algorithm": "sha256"} if hash_chain else {},
+            previous_hash=previous_hash if hash_chain else None,
+        )
+        if hash_chain:
+            event.integrity["previous_event_digest"] = previous_hash
+            dumped = event.model_dump(mode="json")
+            event_hash = _audit_event_hash(dumped)
+            event.integrity["event_digest"] = event_hash
+            event.previous_hash = previous_hash
+            event.event_hash = event_hash
+            previous_hash = event_hash
+        events.append(event)
+    return events
+
+
+def render_audit_events_jsonl(events: list[AIAuditEvent]) -> str:
+    """Render AIAuditLog-style events as JSONL."""
+    lines = [json.dumps(event.model_dump(mode="json"), sort_keys=True, default=str) for event in events]
+    return "\n".join(lines) + "\n"

@@ -182,6 +182,24 @@ def exit_report(
         float, typer.Option("--max-latency-increase", help="Maximum acceptable latency increase percentage.")
     ] = 50.0,
     min_cost_reduction: Annotated[float, typer.Option("--min-cost-reduction", help="Minimum expected cost reduction percentage.")] = 20.0,
+    export_aimeter: Annotated[
+        Path | None,
+        typer.Option("--export-aimeter", help="Write an AIMeter OSS-style cost/outcome summary JSON file."),
+    ] = None,
+    export_auditlog: Annotated[
+        Path | None,
+        typer.Option("--export-auditlog", help="Write AIAuditLog-style audit events as JSONL."),
+    ] = None,
+    run_id: Annotated[str | None, typer.Option("--run-id", help="Run identifier for portable exports.")] = None,
+    system_id: Annotated[str, typer.Option("--system-id", help="System identifier for audit events.")] = "modelswapbench",
+    actor: Annotated[str, typer.Option("--actor", help="Actor identifier for audit events.")] = "modelswapbench-cli",
+    audit_hash_chain: Annotated[
+        bool,
+        typer.Option(
+            "--audit-hash-chain/--no-audit-hash-chain",
+            help="Include SHA-256 hash-chain fields in audit events for tamper-evident-style review.",
+        ),
+    ] = True,
 ) -> None:
     """Generate an offline AI Vendor Exit Report."""
     commands.exit_report(
@@ -196,6 +214,12 @@ def exit_report(
         min_quality_retention=min_quality_retention,
         max_latency_increase=max_latency_increase,
         min_cost_reduction=min_cost_reduction,
+        export_aimeter=export_aimeter,
+        export_auditlog=export_auditlog,
+        run_id=run_id,
+        system_id=system_id,
+        actor=actor,
+        audit_hash_chain=audit_hash_chain,
     )
 
 

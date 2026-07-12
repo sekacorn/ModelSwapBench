@@ -17,7 +17,11 @@ from model_swap_bench.providers.base import build_provider
 from model_swap_bench.reports import RENDERERS
 from model_swap_bench.reports.exit_report import (
     ExitReportThresholds,
+    build_aimeter_export,
+    build_audit_events,
     build_exit_report,
+    render_aimeter_export_json,
+    render_audit_events_jsonl,
     render_exit_report_json,
     render_exit_report_markdown,
 )
@@ -194,6 +198,12 @@ def exit_report(
     min_quality_retention: float,
     max_latency_increase: float,
     min_cost_reduction: float,
+    export_aimeter: Path | None,
+    export_auditlog: Path | None,
+    run_id: str | None,
+    system_id: str,
+    actor: str,
+    audit_hash_chain: bool,
 ) -> None:
     if fmt not in {"markdown", "json"}:
         raise ConfigError("unknown exit-report format; choose markdown or json")
@@ -206,6 +216,10 @@ def exit_report(
         "modelswapbench exit-report "
         f"--baseline {baseline} --candidate {candidate} --input {input_file} --output {output_file} --format {fmt}"
     )
+    if export_aimeter:
+        command += f" --export-aimeter {export_aimeter}"
+    if export_auditlog:
+        command += f" --export-auditlog {export_auditlog}"
     report_payload = build_exit_report(
         input_path=input_file,
         baseline_ref=baseline,
@@ -220,6 +234,23 @@ def exit_report(
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text(text, encoding="utf-8")
     output.success(f"exit report written to {output_file}")
+    if export_aimeter:
+        aimeter_export = build_aimeter_export(report_payload)
+        export_aimeter.parent.mkdir(parents=True, exist_ok=True)
+        export_aimeter.write_text(render_aimeter_export_json(aimeter_export), encoding="utf-8")
+        output.success(f"AIMeter OSS-style export written to {export_aimeter}")
+    if export_auditlog:
+        audit_events = build_audit_events(
+            report_payload,
+            run_id=run_id,
+            system_id=system_id,
+            actor=actor,
+            hash_chain=audit_hash_chain,
+            include_aimeter_export_event=export_aimeter is not None,
+        )
+        export_auditlog.parent.mkdir(parents=True, exist_ok=True)
+        export_auditlog.write_text(render_audit_events_jsonl(audit_events), encoding="utf-8")
+        output.success(f"AIAuditLog-style audit events written to {export_auditlog}")
     output.info(f"Decision: {report_payload.decision.decision.value}")
 
 
