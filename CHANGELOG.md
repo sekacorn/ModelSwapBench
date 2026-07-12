@@ -8,6 +8,24 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0a4] - 2026-07-11
+
+### Added
+- Added `--export-aimeter` to `modelswapbench exit-report` for Decimal-safe
+  AIMeter OSS-style cost/outcome JSON exports.
+- Added `--export-auditlog` to `modelswapbench exit-report` for AIAuditLog-style
+  JSONL audit events with optional SHA-256 hash-chain fields.
+- Added portable export metadata flags for audit events, including `--run-id`,
+  `--system-id`, `--actor`, and `--audit-hash-chain/--no-audit-hash-chain`.
+
+### Fixed
+- `run --dry-run --allow-hosted` now respects `privacy.allow_hosted_providers`
+  before instantiating external providers.
+- Running a benchmark with an unknown `--model` alias now fails with a clear
+  invalid-input error instead of producing an empty successful run.
+- Malformed exit-report JSON or JSONL inputs now produce clean configuration
+  errors instead of internal errors.
+
 ## [0.1.0a3] - 2026-07-11
 
 ### Added

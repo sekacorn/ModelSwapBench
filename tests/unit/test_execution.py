@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import pytest
+
 from model_swap_bench.config import build_suite
+from model_swap_bench.errors import ConfigError
 from model_swap_bench.execution import BenchmarkRunner
 from model_swap_bench.results import CaseStatus
 from tests.conftest import make_suite_dict
@@ -36,6 +39,11 @@ async def test_only_model_filter(suite) -> None:  # type: ignore[no-untyped-def]
     run = await BenchmarkRunner(suite).run(only_models={"candidate"})
     aliases = {r.model_alias for r in run.case_results}
     assert aliases == {"candidate"}
+
+
+async def test_only_model_filter_rejects_unknown_alias(suite) -> None:  # type: ignore[no-untyped-def]
+    with pytest.raises(ConfigError, match="unknown model alias"):
+        await BenchmarkRunner(suite).run(only_models={"missing"})
 
 
 async def test_cascade_escalation() -> None:

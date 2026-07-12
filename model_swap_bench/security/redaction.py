@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-_PLACEHOLDER = "«redacted»"
+_PLACEHOLDER = "[redacted]"
 
 _PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"\bsk-[A-Za-z0-9_-]{16,}\b"),  # OpenAI-style keys

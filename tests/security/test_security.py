@@ -23,8 +23,8 @@ def test_resolve_within_blocks_escape(tmp_path: Path) -> None:
 
 
 def test_redact_text() -> None:
-    secret = "key sk-ABCDEFGHIJKLMNOP1234567890 here"
-    assert "sk-ABCDEFGH" not in redact_text(secret)
+    secret = "key " + "sk-" + "ABCDEFGHIJKLMNOP1234567890" + " here"
+    assert "sk-" + "ABCDEFGH" not in redact_text(secret)
     bearer = "Authorization: Bearer abcdef1234567890ABCDEF"
     assert "abcdef1234567890" not in redact_text(bearer)
 

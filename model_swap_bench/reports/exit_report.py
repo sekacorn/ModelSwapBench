@@ -360,7 +360,10 @@ def load_exit_summaries(path: Path) -> tuple[str | None, list[BenchmarkSummary]]
         raise ConfigError(f"exit-report input not found: {path}")
     if path.suffix.lower() == ".jsonl":
         return None, _load_jsonl(path)
-    raw = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ConfigError(f"could not parse exit-report JSON input {path.name}: {exc}") from exc
     if isinstance(raw, list):
         return None, [BenchmarkSummary.model_validate(item) for item in raw]
     if not isinstance(raw, dict):
@@ -402,7 +405,12 @@ def _load_jsonl(path: Path) -> list[BenchmarkSummary]:
     for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         if not line.strip():
             continue
-        row = json.loads(line)
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ConfigError(f"could not parse exit-report JSONL row {line_number}: {exc}") from exc
+        if not isinstance(row, dict):
+            raise ConfigError(f"JSONL row {line_number} must be an object")
         provider = str(row.get("provider") or "unknown")
         model = str(row.get("model") or row.get("label") or "unknown")
         label = str(row.get("label") or f"{provider}:{model}")

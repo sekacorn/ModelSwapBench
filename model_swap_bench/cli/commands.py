@@ -121,11 +121,13 @@ def run(
     if any(m.is_hosted for m in suite.models) and (allow_hosted and suite.privacy.allow_hosted_providers):
         output.warn("Hosted providers enabled: benchmark inputs may leave this machine.")
 
+    hosted_enabled = allow_hosted and suite.privacy.allow_hosted_providers
+
     if dry_run:
-        return None, _dry_run(suite, suite_dir, allow_hosted)
+        return None, _dry_run(suite, suite_dir, hosted_enabled)
 
     only = {only_model} if only_model else None
-    runner = BenchmarkRunner(suite, suite_dir=suite_dir, allow_hosted=allow_hosted and suite.privacy.allow_hosted_providers)
+    runner = BenchmarkRunner(suite, suite_dir=suite_dir, allow_hosted=hosted_enabled)
     run_result = asyncio.run(runner.run(only_models=only))
 
     repo = RunRepository(output_root or Path.cwd())

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import yaml
 from typer.testing import CliRunner
 
 from model_swap_bench.cli.app import app
+from model_swap_bench.cli.commands import run
+from model_swap_bench.errors import ExitCode
 from tests.conftest import make_suite_dict
 
 runner = CliRunner()
@@ -60,6 +63,33 @@ def test_run_dry_run(tmp_path: Path) -> None:
     suite_file = _write_suite(tmp_path / "b.yaml")
     result = runner.invoke(app, ["run", str(suite_file), "--dry-run"])
     assert result.exit_code == 0
+
+
+def test_dry_run_respects_privacy_gate_for_external_openai_compatible(tmp_path: Path) -> None:
+    suite_file = tmp_path / "external.json"
+    suite_file.write_text(
+        json.dumps(
+            {
+                "name": "privacy-dry-run",
+                "models": [
+                    {
+                        "alias": "external",
+                        "provider": "openai_compatible",
+                        "model": "example",
+                        "deployment": "self_hosted",
+                        "base_url": "https://api.example.com/v1",
+                    }
+                ],
+                "cases": [{"id": "c1", "input": {"message": "hi"}}],
+                "privacy": {"allow_hosted_providers": False},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _run, code = run(suite_file, allow_hosted=True, dry_run=True)
+
+    assert code is ExitCode.PROVIDER_UNAVAILABLE
 
 
 def test_pricing_show_and_validate() -> None:

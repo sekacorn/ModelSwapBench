@@ -242,6 +242,21 @@ def test_error_paths_and_json_renderer(tmp_path: Path) -> None:
     with pytest.raises(ConfigError):
         load_exit_summaries(bad)
 
+    invalid_json = tmp_path / "invalid.json"
+    invalid_json.write_text("{", encoding="utf-8")
+    with pytest.raises(ConfigError, match="could not parse"):
+        load_exit_summaries(invalid_json)
+
+    invalid_jsonl = tmp_path / "invalid.jsonl"
+    invalid_jsonl.write_text('{"provider":"openai","model":"gpt-4o"}\nnot-json', encoding="utf-8")
+    with pytest.raises(ConfigError, match="row 2"):
+        load_exit_summaries(invalid_jsonl)
+
+    non_object_jsonl = tmp_path / "non-object.jsonl"
+    non_object_jsonl.write_text('"not an object"', encoding="utf-8")
+    with pytest.raises(ConfigError, match="must be an object"):
+        load_exit_summaries(non_object_jsonl)
+
     summaries = [_summary("openai:gpt-4o")]
     with pytest.raises(ConfigError):
         select_summary(summaries, "missing:model")

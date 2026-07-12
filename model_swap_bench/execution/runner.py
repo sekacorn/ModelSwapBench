@@ -8,7 +8,7 @@ from collections.abc import Awaitable, Callable, Sequence
 from pathlib import Path
 
 from model_swap_bench.config.models import BenchmarkCase, BenchmarkSuite, ExecutionMode, ModelCandidate
-from model_swap_bench.errors import ProviderError, ProviderTimeoutError, ProviderUnavailableError
+from model_swap_bench.errors import ConfigError, ProviderError, ProviderTimeoutError, ProviderUnavailableError
 from model_swap_bench.evaluators import EvalContext, resolve_evaluator
 from model_swap_bench.execution.context import ExecutionContext
 from model_swap_bench.execution.retry import RetryOutcome, call_with_retry
@@ -130,7 +130,13 @@ class BenchmarkRunner:
 
     def _models(self, only: set[str] | None) -> list[ModelCandidate]:
         if only:
-            return [m for m in self.suite.models if m.alias in only]
+            models = [m for m in self.suite.models if m.alias in only]
+            found = {m.alias for m in models}
+            missing = sorted(only - found)
+            if missing:
+                available = ", ".join(m.alias for m in self.suite.models)
+                raise ConfigError(f"unknown model alias(es): {', '.join(missing)}; available: {available}")
+            return models
         return list(self.suite.models)
 
     def _mode(self, models: Sequence[ModelCandidate]) -> ExecutionMode:
