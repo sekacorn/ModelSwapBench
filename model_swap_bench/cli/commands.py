@@ -6,6 +6,8 @@ import asyncio
 from decimal import Decimal
 from pathlib import Path
 
+from pydantic import ValidationError as PydanticValidationError
+
 from model_swap_bench.cli import output
 from model_swap_bench.config import load_suite, schema_json
 from model_swap_bench.config.models import BenchmarkSuite, ProviderKind
@@ -24,6 +26,16 @@ from model_swap_bench.reports.exit_report import (
     render_audit_events_jsonl,
     render_exit_report_json,
     render_exit_report_markdown,
+)
+from model_swap_bench.reports.route_plan import (
+    RoutingThresholds,
+    build_model_routing_plan,
+    build_route_aimeter_export,
+    build_route_audit_events,
+    render_model_routing_plan_json,
+    render_model_routing_plan_markdown,
+    render_route_aimeter_export_json,
+    render_route_audit_events_jsonl,
 )
 from model_swap_bench.results import BenchmarkRun, CaseStatus
 from model_swap_bench.storage import RunRepository
@@ -256,6 +268,110 @@ def exit_report(
     output.info(f"Decision: {report_payload.decision.decision.value}")
 
 
+def route_plan(
+    *,
+    input_file: Path,
+    output_file: Path,
+    fmt: str,
+    baseline: str,
+    candidate: str,
+    workload: str | None,
+    risk_profile: str,
+    min_quality_retention: float,
+    max_latency_increase: float,
+    min_cost_reduction: float,
+    export_json: Path | None,
+    export_aimeter: Path | None,
+    export_auditlog: Path | None,
+    run_id: str | None,
+    system_id: str,
+    actor: str,
+    audit_hash_chain: bool,
+) -> None:
+    if fmt not in {"markdown", "json"}:
+        raise ConfigError("unknown route-plan format; choose markdown or json")
+    destinations = {
+        "output": output_file,
+        "JSON export": export_json,
+        "AIMeter export": export_aimeter,
+        "audit-log export": export_auditlog,
+    }
+    input_path = input_file.resolve(strict=False)
+    seen_destinations: dict[Path, str] = {}
+    destination_paths: list[tuple[Path, str]] = []
+    for label, destination in destinations.items():
+        if destination is None:
+            continue
+        resolved = destination.resolve(strict=False)
+        same_as_input = resolved == input_path or (input_file.exists() and destination.exists() and destination.samefile(input_file))
+        if same_as_input:
+            raise ConfigError(f"{label} path must not overwrite the route-plan input")
+        collision = seen_destinations.get(resolved)
+        if collision is None:
+            collision = next(
+                (
+                    previous_label
+                    for previous_path, previous_label in destination_paths
+                    if destination.exists() and previous_path.exists() and destination.samefile(previous_path)
+                ),
+                None,
+            )
+        if collision is not None:
+            raise ConfigError(f"{label} path collides with {collision} path")
+        seen_destinations[resolved] = label
+        destination_paths.append((destination, label))
+    try:
+        thresholds = RoutingThresholds(
+            min_quality_retention_pct=Decimal(str(min_quality_retention)),
+            max_latency_increase_pct=Decimal(str(max_latency_increase)),
+            min_cost_reduction_pct=Decimal(str(min_cost_reduction)),
+        )
+    except PydanticValidationError as exc:
+        raise ConfigError("route-plan thresholds must be finite, non-negative percentages") from exc
+    command = f"modelswapbench route-plan --input {input_file} --output {output_file} --format {fmt}"
+    if export_json:
+        command += f" --export-json {export_json}"
+    if export_aimeter:
+        command += f" --export-aimeter {export_aimeter}"
+    if export_auditlog:
+        command += f" --export-auditlog {export_auditlog}"
+    plan = build_model_routing_plan(
+        input_path=input_file,
+        baseline_model=baseline,
+        candidate_model=candidate,
+        workload=workload,
+        risk_profile=risk_profile,
+        thresholds=thresholds,
+        run_id=run_id,
+        cli_command=command,
+    )
+    text = render_model_routing_plan_markdown(plan) if fmt == "markdown" else render_model_routing_plan_json(plan)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    output_file.write_text(text, encoding="utf-8")
+    output.success(f"route plan written to {output_file}")
+    if export_json:
+        export_json.parent.mkdir(parents=True, exist_ok=True)
+        export_json.write_text(render_model_routing_plan_json(plan), encoding="utf-8")
+        output.success(f"route plan JSON written to {export_json}")
+    if export_aimeter:
+        aimeter_export = build_route_aimeter_export(plan)
+        export_aimeter.parent.mkdir(parents=True, exist_ok=True)
+        export_aimeter.write_text(render_route_aimeter_export_json(aimeter_export), encoding="utf-8")
+        output.success(f"AIMeter OSS-style route export written to {export_aimeter}")
+    if export_auditlog:
+        audit_events = build_route_audit_events(
+            plan,
+            system_id=system_id,
+            actor=actor,
+            hash_chain=audit_hash_chain,
+            include_aimeter_export_event=export_aimeter is not None,
+        )
+        export_auditlog.parent.mkdir(parents=True, exist_ok=True)
+        export_auditlog.write_text(render_route_audit_events_jsonl(audit_events), encoding="utf-8")
+        output.success(f"AIAuditLog-style route audit events written to {export_auditlog}")
+    output.info(f"Candidate route share: {plan.summary.candidate_model_pct.quantize(Decimal('0.01'))}%")
+
+
 def compare(run_ref: str, *, root: Path | None) -> ExitCode:
     repo = RunRepository(root or Path.cwd())
     run_result = repo.load(run_ref)
@@ -382,6 +498,7 @@ EXAMPLES = [
     ("code-review-summary", "Structured severity + required remediation; forbids 'fully secure' claims."),
     ("cascade-routing", "Cheap local model first, escalate failures to a stronger fixture model."),
     ("vendor_exit", "AI Vendor Exit Report input and sample Markdown output."),
+    ("route_plan", "Model Routing Plan input and sample Markdown/JSON outputs."),
 ]
 
 

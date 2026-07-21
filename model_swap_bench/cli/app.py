@@ -223,6 +223,65 @@ def exit_report(
     )
 
 
+@app.command("route-plan")
+@guard
+def route_plan(
+    input_file: Annotated[Path, typer.Option("--input", help="Per-task route-plan JSON input.")],
+    output_file: Annotated[Path, typer.Option("--output", help="Report output path.")],
+    fmt: Annotated[str, typer.Option("--format", help="markdown|json")] = "markdown",
+    baseline: Annotated[str, typer.Option("--baseline", help="Baseline provider:model, model, or label.")] = "baseline",
+    candidate: Annotated[str, typer.Option("--candidate", help="Candidate provider:model, model, or label.")] = "candidate",
+    workload: Annotated[str | None, typer.Option("--workload", help="Workload label.")] = None,
+    risk_profile: Annotated[str, typer.Option("--risk-profile", help="low|medium|high|regulated")] = "medium",
+    min_quality_retention: Annotated[
+        float, typer.Option("--min-quality-retention", help="Minimum acceptable quality retention percentage.")
+    ] = 80.0,
+    max_latency_increase: Annotated[
+        float, typer.Option("--max-latency-increase", help="Maximum acceptable latency increase percentage.")
+    ] = 50.0,
+    min_cost_reduction: Annotated[float, typer.Option("--min-cost-reduction", help="Minimum expected cost reduction percentage.")] = 20.0,
+    export_json: Annotated[Path | None, typer.Option("--export-json", help="Write a machine-readable route-plan JSON file.")] = None,
+    export_aimeter: Annotated[
+        Path | None,
+        typer.Option("--export-aimeter", help="Write an AIMeter OSS-style route cost/outcome summary JSON file."),
+    ] = None,
+    export_auditlog: Annotated[
+        Path | None,
+        typer.Option("--export-auditlog", help="Write AIAuditLog-style route audit events as JSONL."),
+    ] = None,
+    run_id: Annotated[str | None, typer.Option("--run-id", help="Run identifier for portable exports.")] = None,
+    system_id: Annotated[str, typer.Option("--system-id", help="System identifier for audit events.")] = "modelswapbench",
+    actor: Annotated[str, typer.Option("--actor", help="Actor identifier for audit events.")] = "modelswapbench-cli",
+    audit_hash_chain: Annotated[
+        bool,
+        typer.Option(
+            "--audit-hash-chain/--no-audit-hash-chain",
+            help="Include SHA-256 hash-chain fields in audit events for tamper-evident-style review.",
+        ),
+    ] = True,
+) -> None:
+    """Generate an offline Model Routing Plan."""
+    commands.route_plan(
+        input_file=input_file,
+        output_file=output_file,
+        fmt=fmt,
+        baseline=baseline,
+        candidate=candidate,
+        workload=workload,
+        risk_profile=risk_profile,
+        min_quality_retention=min_quality_retention,
+        max_latency_increase=max_latency_increase,
+        min_cost_reduction=min_cost_reduction,
+        export_json=export_json,
+        export_aimeter=export_aimeter,
+        export_auditlog=export_auditlog,
+        run_id=run_id,
+        system_id=system_id,
+        actor=actor,
+        audit_hash_chain=audit_hash_chain,
+    )
+
+
 @app.command()
 @guard
 def reproduce(

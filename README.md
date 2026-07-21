@@ -73,6 +73,13 @@ modelswapbench compare latest
 modelswapbench exit-report --baseline openai:gpt-4o --candidate ollama:qwen2.5:3b \
   --input examples/vendor_exit/customer_support_results.json \
   --output reports/vendor_exit_report.md --format markdown
+modelswapbench route-plan \
+  --input examples/route_plan/customer_support_routing_results.json \
+  --output reports/model_routing_plan.md \
+  --format markdown \
+  --baseline openai:gpt-4o \
+  --candidate ollama:qwen2.5:3b \
+  --export-json reports/model_routing_plan.json
 ```
 
 The first example runs entirely with the **deterministic provider** — no paid
@@ -179,6 +186,42 @@ thresholds, and risk boundaries before migration. Passing the report does not
 prove legal, regulatory, safety, or security compliance, and human review may
 still be required for high-risk workflows.
 
+## Model Routing Plan
+
+`modelswapbench route-plan` helps teams reduce vendor lock-in gradually by
+identifying which tasks can move to a candidate model, which should remain on
+the baseline model, which require human review, and which should be escalated or
+blocked.
+
+```bash
+modelswapbench route-plan \
+  --input examples/route_plan/customer_support_routing_results.json \
+  --output reports/model_routing_plan.md \
+  --format markdown \
+  --baseline openai:gpt-4o \
+  --candidate ollama:qwen2.5:3b \
+  --risk-profile medium \
+  --export-json reports/model_routing_plan.json \
+  --export-aimeter reports/route_aimeter_summary.json \
+  --export-auditlog reports/route_audit_events.jsonl
+```
+
+The plan classifies each task as `candidate_model`, `baseline_model`,
+`human_review`, or `blocked_or_escalate`, with quality, cost, latency, policy
+notes, routing percentages, and blended estimated savings when enough cost data
+exists.
+
+Portable exports are deterministic, offline-first, and file-based:
+
+- `--export-json PATH` writes the full machine-readable route plan.
+- `--export-aimeter PATH` writes an AIMeter OSS-style route cost/outcome summary.
+- `--export-auditlog PATH` writes AIAuditLog-style JSONL audit events.
+
+These exports do not add runtime dependencies on AIMeter OSS or AIAuditLog.
+Estimated cost is not invoice-confirmed, projected savings are not realized
+savings, and route decisions are not legal, compliance, safety, or security
+guarantees.
+
 ## Cascade strategy
 
 Run a cheap/local model first and escalate only failing or low-confidence cases to
@@ -203,7 +246,7 @@ sole evaluator; judge-model mode on the roadmap).
 ## CLI
 
 `doctor` · `init` · `validate` · `schema` · `models` · `providers` · `run` ·
-`compare` · `report` · `exit-report` · `runs list|show` · `reproduce` · `clean` ·
+`compare` · `report` · `exit-report` · `route-plan` · `runs list|show` · `reproduce` · `clean` ·
 `pricing show|validate|set` · `examples list`.
 
 Exit codes: `0` success · `1` constraints failed · `2` invalid input ·

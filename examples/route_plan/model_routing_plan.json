@@ -1,0 +1,224 @@
+{
+  "baseline_model": "openai:gpt-4o",
+  "candidate_model": "ollama:qwen2.5:3b",
+  "cli_command": "modelswapbench route-plan --input examples\\route_plan\\customer_support_routing_results.json --output examples\\route_plan\\model_routing_plan.md --format markdown --export-json examples\\route_plan\\model_routing_plan.json --export-aimeter examples\\route_plan\\aimeter_route_summary.json --export-auditlog examples\\route_plan\\route_audit_events.jsonl",
+  "generated_at": "2026-01-01T00:00:00Z",
+  "limitations": [
+    "This plan is based on benchmark inputs and rule-based thresholds.",
+    "Estimated cost is not invoice-confirmed.",
+    "Projected savings are not realized savings.",
+    "Blended cost uses baseline model cost as a proxy for review and escalation routes; human labor cost is excluded.",
+    "Route decisions are not legal, regulatory, safety, security, or compliance guarantees.",
+    "Human review may be required for high-risk or sensitive workflows.",
+    "Model behavior can change across versions, providers, prompts, and runtime environments.",
+    "Benchmark results do not prove universal safety.",
+    "AIMeter and AIAuditLog outputs are portable file exports, not live runtime integrations."
+  ],
+  "package_version": "0.1.0a5",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python_version": "3.13.12",
+  "recommendation": "Migrate only low-risk candidate-routed tasks first; escalate blocked tasks and review sensitive tasks before any rollout.",
+  "risk_profile": "medium",
+  "run_id": "route-plan-example-2026-01-01",
+  "source_path": "examples\\route_plan\\customer_support_routing_results.json",
+  "summary": {
+    "baseline_model_pct": "10.0",
+    "baseline_model_tasks": 1,
+    "baseline_total_estimated_cost": null,
+    "blocked_or_escalate_pct": "30.0",
+    "blocked_or_escalate_tasks": 3,
+    "candidate_model_pct": "30.0",
+    "candidate_model_tasks": 3,
+    "candidate_only_estimated_cost": "6.10",
+    "estimated_blended_savings_pct": null,
+    "human_review_pct": "30.0",
+    "human_review_tasks": 3,
+    "routed_blended_estimated_cost": null,
+    "total_tasks": 10
+  },
+  "task_decisions": [
+    {
+      "category": "account-help",
+      "cost_reduction_pct": "87.500",
+      "cost_signal": "pass",
+      "latency_delta_pct": "-25.00",
+      "latency_signal": "pass",
+      "policy_notes": [],
+      "quality_retention_pct": "94.73684210526315789473684211",
+      "quality_signal": "pass",
+      "reason": "Quality, risk, latency, and cost evidence support candidate routing.",
+      "risk_level": "low",
+      "route": "candidate_model",
+      "task_id": "password-reset",
+      "warnings": []
+    },
+    {
+      "category": "internal-summary",
+      "cost_reduction_pct": "88.88888888888888888888888889",
+      "cost_signal": "pass",
+      "latency_delta_pct": "-25.00",
+      "latency_signal": "pass",
+      "policy_notes": [],
+      "quality_retention_pct": "94.62365591397849462365591398",
+      "quality_signal": "pass",
+      "reason": "Quality, risk, latency, and cost evidence support candidate routing.",
+      "risk_level": "low",
+      "route": "candidate_model",
+      "task_id": "internal-summary",
+      "warnings": []
+    },
+    {
+      "category": "billing-faq",
+      "cost_reduction_pct": "83.33333333333333333333333333",
+      "cost_signal": "pass",
+      "latency_delta_pct": "-13.63636363636363636363636364",
+      "latency_signal": "pass",
+      "policy_notes": [],
+      "quality_retention_pct": "91.30434782608695652173913043",
+      "quality_signal": "pass",
+      "reason": "Quality, risk, latency, and cost evidence support candidate routing.",
+      "risk_level": "medium",
+      "route": "candidate_model",
+      "task_id": "billing-faq",
+      "warnings": []
+    },
+    {
+      "category": "refund-request",
+      "cost_reduction_pct": "82.14285714285714285714285714",
+      "cost_signal": "pass",
+      "latency_delta_pct": "-23.07692307692307692307692308",
+      "latency_signal": "pass",
+      "policy_notes": [
+        "customer-facing"
+      ],
+      "quality_retention_pct": "85.55555555555555555555555556",
+      "quality_signal": "pass",
+      "reason": "Candidate may be usable, but risk, sensitivity, or borderline evidence requires review.",
+      "risk_level": "medium",
+      "route": "human_review",
+      "task_id": "refund-request",
+      "warnings": []
+    },
+    {
+      "category": "escalation",
+      "cost_reduction_pct": "78.12500",
+      "cost_signal": "pass",
+      "latency_delta_pct": "-14.28571428571428571428571429",
+      "latency_signal": "pass",
+      "policy_notes": [
+        "angry",
+        "escalated",
+        "customer-facing"
+      ],
+      "quality_retention_pct": "92.30769230769230769230769231",
+      "quality_signal": "pass",
+      "reason": "Candidate may be usable, but risk, sensitivity, or borderline evidence requires review.",
+      "risk_level": "high",
+      "route": "human_review",
+      "task_id": "angry-customer-escalation",
+      "warnings": []
+    },
+    {
+      "category": "account-cancellation",
+      "cost_reduction_pct": "76.92307692307692307692307692",
+      "cost_signal": "pass",
+      "latency_delta_pct": "76.00",
+      "latency_signal": "fail",
+      "policy_notes": [
+        "customer-facing"
+      ],
+      "quality_retention_pct": "81.11111111111111111111111111",
+      "quality_signal": "pass",
+      "reason": "Candidate has failure flags that make baseline routing safer.",
+      "risk_level": "medium",
+      "route": "baseline_model",
+      "task_id": "account-cancellation",
+      "warnings": []
+    },
+    {
+      "category": "security-concern",
+      "cost_reduction_pct": "77.14285714285714285714285714",
+      "cost_signal": "pass",
+      "latency_delta_pct": "-13.33333333333333333333333333",
+      "latency_signal": "pass",
+      "policy_notes": [
+        "security-sensitive"
+      ],
+      "quality_retention_pct": "92.47311827956989247311827957",
+      "quality_signal": "pass",
+      "reason": "Candidate may be usable, but risk, sensitivity, or borderline evidence requires review.",
+      "risk_level": "high",
+      "route": "human_review",
+      "task_id": "security-concern",
+      "warnings": []
+    },
+    {
+      "category": "legal",
+      "cost_reduction_pct": "77.500",
+      "cost_signal": "pass",
+      "latency_delta_pct": "-12.500",
+      "latency_signal": "pass",
+      "policy_notes": [
+        "requires-escalation"
+      ],
+      "quality_retention_pct": "93.61702127659574468085106383",
+      "quality_signal": "pass",
+      "reason": "Task is blocked, regulated, escalated, or insufficiently evaluated.",
+      "risk_level": "high",
+      "route": "blocked_or_escalate",
+      "task_id": "legal-question",
+      "warnings": []
+    },
+    {
+      "category": "medical",
+      "cost_reduction_pct": "77.500",
+      "cost_signal": "pass",
+      "latency_delta_pct": "-9.37500",
+      "latency_signal": "pass",
+      "policy_notes": [
+        "requires-escalation"
+      ],
+      "quality_retention_pct": "91.20879120879120879120879121",
+      "quality_signal": "pass",
+      "reason": "Task is blocked, regulated, escalated, or insufficiently evaluated.",
+      "risk_level": "high",
+      "route": "blocked_or_escalate",
+      "task_id": "medical-question",
+      "warnings": []
+    },
+    {
+      "category": "financial",
+      "cost_reduction_pct": null,
+      "cost_signal": "unknown",
+      "latency_delta_pct": "-9.677419354838709677419354839",
+      "latency_signal": "pass",
+      "policy_notes": [
+        "requires-escalation"
+      ],
+      "quality_retention_pct": "92.39130434782608695652173913",
+      "quality_signal": "pass",
+      "reason": "Task is blocked, regulated, escalated, or insufficiently evaluated.",
+      "risk_level": "high",
+      "route": "blocked_or_escalate",
+      "task_id": "financial-question",
+      "warnings": [
+        "Cost is unknown; missing pricing was not treated as zero."
+      ]
+    }
+  ],
+  "thresholds": {
+    "blocked_categories": [
+      "financial",
+      "legal",
+      "medical",
+      "regulated",
+      "safety-critical",
+      "security incident"
+    ],
+    "high_risk_requires_review": true,
+    "max_latency_increase_pct": "50.0",
+    "min_cost_reduction_pct": "20.0",
+    "min_quality_retention_pct": "80.0"
+  },
+  "workload": "Customer support routing"
+}

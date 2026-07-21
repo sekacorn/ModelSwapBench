@@ -1,0 +1,74 @@
+{
+  "baseline_model": "openai:gpt-4o",
+  "candidate_model": "ollama:qwen2.5:3b",
+  "cost": {
+    "baseline_total_estimated_cost": {
+      "amount": null,
+      "basis": "unknown",
+      "currency": "USD",
+      "invoice_confirmed": false,
+      "known": false
+    },
+    "candidate_only_estimated_cost": {
+      "amount": "6.1000",
+      "basis": "estimated",
+      "currency": "USD",
+      "invoice_confirmed": false,
+      "known": true
+    },
+    "estimated_savings_vs_baseline_pct": null,
+    "projected_savings_realized": false,
+    "routed_blended_estimated_cost": {
+      "amount": null,
+      "basis": "unknown",
+      "currency": "USD",
+      "invoice_confirmed": false,
+      "known": false
+    }
+  },
+  "generated_at": "2026-01-01T00:00:00Z",
+  "limitations": [
+    "This plan is based on benchmark inputs and rule-based thresholds.",
+    "Estimated cost is not invoice-confirmed.",
+    "Projected savings are not realized savings.",
+    "Blended cost uses baseline model cost as a proxy for review and escalation routes; human labor cost is excluded.",
+    "Route decisions are not legal, regulatory, safety, security, or compliance guarantees.",
+    "Human review may be required for high-risk or sensitive workflows.",
+    "Model behavior can change across versions, providers, prompts, and runtime environments.",
+    "Benchmark results do not prove universal safety.",
+    "AIMeter and AIAuditLog outputs are portable file exports, not live runtime integrations.",
+    "This is an AIMeter OSS-style portable export, not a live AIMeter runtime integration.",
+    "Missing pricing is represented as unknown and is not treated as zero."
+  ],
+  "outcome": {
+    "recommendation": "Migrate only low-risk candidate-routed tasks first; escalate blocked tasks and review sensitive tasks before any rollout.",
+    "risk_profile": "medium",
+    "route_percentages": {
+      "baseline_model": "10.00",
+      "blocked_or_escalate": "30.00",
+      "candidate_model": "30.00",
+      "human_review": "30.00"
+    }
+  },
+  "quality": {
+    "tasks_failing_quality_gate": 0,
+    "tasks_passing_quality_gate": 10,
+    "tasks_with_unknown_quality": 0
+  },
+  "routes": {
+    "baseline_model": 1,
+    "blocked_or_escalate": 3,
+    "candidate_model": 3,
+    "human_review": 3
+  },
+  "schema_version": "modelswapbench.route-plan.aimeter-export.v1",
+  "source": {
+    "component": "route-plan",
+    "export_type": "aimeter-oss-style-route-cost-outcome-summary",
+    "input_path": "examples\\route_plan\\customer_support_routing_results.json",
+    "integration_mode": "offline-file-export",
+    "service": "modelswapbench",
+    "version": "0.1.0a5"
+  },
+  "workload": "Customer support routing"
+}

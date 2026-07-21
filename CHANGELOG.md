@@ -8,6 +8,28 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0a5] - 2026-07-21
+
+### Added
+- Added `modelswapbench route-plan` for deterministic task-level routing across
+  candidate, baseline, human-review, and blocked-or-escalated outcomes.
+- Added Markdown and JSON Model Routing Plan outputs with Decimal-safe blended
+  cost estimates and explicit unknown-cost handling.
+- Added AIMeter OSS-style route cost/outcome JSON and AIAuditLog-style route
+  audit-event JSONL exports with optional SHA-256 hash chaining.
+- Added deterministic route-plan fixtures, generated examples, documentation,
+  and regression tests.
+
+### Fixed
+- Enforced workload-level high and regulated risk profiles and required review
+  when task risk is unknown.
+- Normalized policy/category variants so legal, medical, financial, regulated,
+  and security-incident tasks cannot bypass escalation rules through separators.
+- Rejected malformed, duplicate, oversized, non-finite, negative, or
+  pathological route-plan inputs with stable invalid-input errors.
+- Escaped Markdown structure in user-controlled report fields and prevented
+  input/output/export path collisions, including existing hard-link aliases.
+
 ## [0.1.0a4] - 2026-07-11
 
 ### Added
