@@ -1,6 +1,6 @@
 # Contributing to ModelSwapBench
 
-Thanks for your interest! ModelSwapBench is MIT-licensed and provider-neutral by
+Thanks for your interest! ModelSwapBench is Apache-2.0-licensed and provider-neutral by
 design — contributions should preserve both.
 
 ## Getting started
@@ -17,7 +17,7 @@ make quality      # lint + typecheck + test + security
   required for the default suite. Use the deterministic provider.
 - **Typed and linted**: `ruff` clean, `mypy --strict` clean.
 - **≥ 80% meaningful coverage** — no superficial tests to pad the number.
-- **No incompatible source code** may be copied in. All original code is MIT.
+- **No incompatible source code** may be copied in. All original code is Apache-2.0 licensed.
 - **Provider neutrality**: don't hard-code a single vendor into core logic.
 - **Honesty**: never fabricate results, prices, or benchmark scores.
 

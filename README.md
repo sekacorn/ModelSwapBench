@@ -289,5 +289,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [ARCHITECTURE.md](ARCHITECTURE.md), and
 
 ## License
 
-MIT — Copyright (c) 2026 sekacorn. See [LICENSE](LICENSE). Dependency
+[Apache License 2.0](LICENSE) — Copyright (c) 2026 sekacorn. Dependency
 licenses are listed in [docs/dependency-licenses.md](docs/dependency-licenses.md).

@@ -8,7 +8,7 @@ version = "0.1.0a5"
 description = "Open-source model portability and replacement benchmark: measure which model delivers an acceptable outcome at the lowest cost, latency, and operational risk."
 readme = "README.md"
 requires-python = ">=3.11"
-license = "MIT"
+license = "Apache-2.0"
 authors = [{ name = "sekacorn" }]
 maintainers = [{ name = "sekacorn" }]
 keywords = [
@@ -20,7 +20,7 @@ classifiers = [
   "Intended Audience :: Developers",
   "Intended Audience :: Information Technology",
   "Intended Audience :: System Administrators",
-  "License :: OSI Approved :: MIT License",
+  "License :: OSI Approved :: Apache Software License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
