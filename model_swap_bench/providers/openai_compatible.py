@@ -23,7 +23,8 @@ from model_swap_bench.errors import (
 )
 from model_swap_bench.providers.base import HealthStatus, Provider, ProviderRequest, ProviderResponse
 
-_LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
+# 0.0.0.0 is accepted as a local client endpoint for development servers.
+_LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}  # nosec B104
 
 
 def endpoint_is_local(base_url: str) -> bool:

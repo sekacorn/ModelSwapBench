@@ -31,7 +31,8 @@ class CaseStatus(str, Enum):
 class EvalStatus(str, Enum):
     """Outcome of a single evaluator."""
 
-    PASS = "pass"
+    # Status value, not a credential.
+    PASS = "pass"  # nosec B105
     FAIL = "fail"
     ERROR = "error"
     SKIPPED = "skipped"

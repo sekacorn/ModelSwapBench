@@ -6,8 +6,8 @@ Migrate only low-risk candidate-routed tasks first; escalate blocked tasks and r
 
 ## Models Compared
 
-- Baseline model/provider: `openai:gpt-4o`
-- Candidate model/provider: `ollama:qwen2.5:3b`
+- Baseline model/provider: `baseline`
+- Candidate model/provider: `candidate`
 - Date generated: 2026-01-01T00:00:00+00:00
 - Benchmark input file or result source: `examples\route_plan\customer_support_routing_results.json`
 
@@ -80,7 +80,7 @@ Migrate only low-risk candidate-routed tasks first; escalate blocked tasks and r
 - CLI command used: `modelswapbench route-plan --input examples\route_plan\customer_support_routing_results.json --output examples\route_plan\model_routing_plan.md --format markdown --export-json examples\route_plan\model_routing_plan.json --export-aimeter examples\route_plan\aimeter_route_summary.json --export-auditlog examples\route_plan\route_audit_events.jsonl`
 - Input file path: `examples\route_plan\customer_support_routing_results.json`
 - Run id: `route-plan-example-2026-01-01`
-- Package version: 0.1.0a5
+- Package version: 0.1.0a6
 - Timestamp: 2026-01-01T00:00:00+00:00
 - Python version: 3.13.12
 - Platform: Windows-11-10.0.26200-SP0

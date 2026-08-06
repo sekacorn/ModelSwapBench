@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from model_swap_bench.config.models import CascadeCondition
+from model_swap_bench.errors import ConfigError
 from model_swap_bench.execution.context import ExecutionContext
 from model_swap_bench.providers.base import build_provider
 from model_swap_bench.results import BenchmarkRun, CascadeSummary, CaseResult, CaseStatus, EvalStatus
@@ -49,10 +50,12 @@ async def run_cascade(runner: BenchmarkRunner, ctx: ExecutionContext, run: Bench
     from model_swap_bench.execution.runner import run_case
 
     cascade = runner.suite.cascade
-    assert cascade is not None
+    if cascade is None:
+        raise ConfigError("cascade execution requires a cascade configuration")
     first = runner.suite.model_by_alias(cascade.first_stage)
     escal = runner.suite.model_by_alias(cascade.escalation_model)
-    assert first is not None and escal is not None
+    if first is None or escal is None:
+        raise ConfigError("cascade execution references an unknown model alias")
 
     first_provider = build_provider(first, suite_dir=runner.suite_dir, allow_hosted=runner.allow_hosted)
     escal_provider = build_provider(escal, suite_dir=runner.suite_dir, allow_hosted=runner.allow_hosted)

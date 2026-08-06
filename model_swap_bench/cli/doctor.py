@@ -13,7 +13,8 @@ from model_swap_bench._version import __version__
 from model_swap_bench.config.schema import benchmark_json_schema
 from model_swap_bench.providers.ollama import DEFAULT_BASE_URL
 
-PASS = "pass"
+# Status label, not a credential.
+PASS = "pass"  # nosec B105
 WARN = "warning"
 FAIL = "fail"
 NA = "not applicable"

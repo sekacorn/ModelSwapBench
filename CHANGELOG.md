@@ -8,6 +8,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0a6] - 2026-08-06
+
+### Maintenance
+- Publish corrected Apache-2.0 package metadata under the public maintainer identity `sekacorn`.
+
 ## [0.1.0a5] - 2026-07-21
 
 ### Added

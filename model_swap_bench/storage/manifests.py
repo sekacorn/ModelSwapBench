@@ -10,7 +10,8 @@ from __future__ import annotations
 import hashlib
 import json
 import platform
-import subprocess
+import shutil
+import subprocess  # nosec B404
 from pathlib import Path
 from typing import Any
 
@@ -29,9 +30,13 @@ def _forge_version() -> str:
 
 def _git_commit(suite_dir: Path | None) -> str | None:
     cwd = suite_dir if suite_dir and suite_dir.exists() else Path.cwd()
+    git = shutil.which("git")
+    if git is None:
+        return None
     try:
-        out = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
+        # The executable and arguments are fixed; only the working directory varies.
+        out = subprocess.run(  # noqa: S603  # nosec B603
+            [git, "rev-parse", "HEAD"],
             cwd=cwd,
             capture_output=True,
             text=True,

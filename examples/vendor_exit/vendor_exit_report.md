@@ -9,7 +9,7 @@ Candidate acceptable. Use candidate model for low-risk internal workflows and mo
 - Baseline model/provider: `openai:gpt-4o` (openai:gpt-4o)
 - Candidate model/provider: `ollama:qwen2.5:3b` (ollama:qwen2.5:3b)
 - Workload name: Customer support triage
-- Date generated: 2026-07-21T20:58:07.725542+00:00
+- Date generated: 2026-08-05T09:10:28.485713+00:00
 - Benchmark input file or result source: `examples\vendor_exit\customer_support_results.json`
 
 ## Decision
@@ -70,7 +70,7 @@ Use candidate model for low-risk internal workflows and monitor drift.
 
 - CLI command used: `modelswapbench exit-report --baseline openai:gpt-4o --candidate ollama:qwen2.5:3b --input examples\vendor_exit\customer_support_results.json --output examples\vendor_exit\vendor_exit_report.md --format markdown`
 - Input file path: `examples\vendor_exit\customer_support_results.json`
-- Package version: 0.1.0a5
-- Timestamp: 2026-07-21T20:58:07.725542+00:00
+- Package version: 0.1.0a6
+- Timestamp: 2026-08-05T09:10:28.485713+00:00
 - Python version: 3.13.12
 - Platform: Windows-11-10.0.26200-SP0

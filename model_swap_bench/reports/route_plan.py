@@ -67,7 +67,8 @@ class RiskLevel(str, Enum):
 class Signal(str, Enum):
     """Human-readable metric signal."""
 
-    PASS = "pass"
+    # Status value, not a credential.
+    PASS = "pass"  # nosec B105
     WARNING = "warning"
     FAIL = "fail"
     UNKNOWN = "unknown"

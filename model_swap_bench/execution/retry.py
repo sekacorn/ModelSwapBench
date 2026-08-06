@@ -46,5 +46,6 @@ async def call_with_retry(
             attempt += 1
             if backoff_seconds > 0:
                 await asyncio.sleep(backoff_seconds)
-    assert last_exc is not None
+    if last_exc is None:
+        raise RuntimeError("retry loop ended without a result or provider error")
     raise last_exc

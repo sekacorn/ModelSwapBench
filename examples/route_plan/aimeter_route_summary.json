@@ -1,6 +1,6 @@
 {
-  "baseline_model": "openai:gpt-4o",
-  "candidate_model": "ollama:qwen2.5:3b",
+  "baseline_model": "baseline",
+  "candidate_model": "candidate",
   "cost": {
     "baseline_total_estimated_cost": {
       "amount": null,
@@ -68,7 +68,7 @@
     "input_path": "examples\\route_plan\\customer_support_routing_results.json",
     "integration_mode": "offline-file-export",
     "service": "modelswapbench",
-    "version": "0.1.0a5"
+    "version": "0.1.0a6"
   },
   "workload": "Customer support routing"
 }
