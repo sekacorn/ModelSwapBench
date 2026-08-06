@@ -6,6 +6,7 @@ Evaluators are pluggable and registered by name.
 from model_swap_bench.evaluators.base import EvalContext, Evaluator, register
 from model_swap_bench.results import EvaluationResult
 
+
 @register
 class MyEvaluator(Evaluator):
     name = "my_evaluator"

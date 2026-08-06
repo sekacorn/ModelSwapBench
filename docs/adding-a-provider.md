@@ -8,6 +8,7 @@ Providers are provider-neutral by contract. To add one:
 from model_swap_bench.config.models import ProviderKind
 from model_swap_bench.providers.base import HealthStatus, Provider, ProviderRequest, ProviderResponse
 
+
 class MyProvider(Provider):
     kind = ProviderKind.OPENAI_COMPATIBLE  # or a new kind you add to the enum
 
@@ -19,8 +20,7 @@ class MyProvider(Provider):
         # Map request -> your API -> ProviderResponse. Record execution_path + endpoint.
         ...
 
-    async def aclose(self) -> None:
-        ...
+    async def aclose(self) -> None: ...
 ```
 
 2. If it's a genuinely new backend, add a value to `ProviderKind` and wire it in
