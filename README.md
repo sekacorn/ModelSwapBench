@@ -6,7 +6,7 @@ Run the same workflow across local, open-weight, self-hosted, and hosted models.
 Measure quality, latency, policy compliance, and **cost per successful outcome**
 before you commit to a vendor.
 
-> Status: **v0.1.0-alpha** — usable and fully offline-capable. APIs may change before 1.0.
+> Status: **0.1.0a7 alpha** - usable and fully offline-capable. APIs may change before 1.0.
 
 ModelSwapBench evaluates whether another model can replace an existing model
 for a real workflow while preserving quality, reliability, policy compliance,
@@ -278,8 +278,11 @@ sole evaluator; judge-model mode on the roadmap).
 ## CLI
 
 `doctor` · `init` · `validate` · `schema` · `models` · `providers` · `run` ·
-`compare` · `report` · `exit-report` · `route-plan` · `runs list|show` · `reproduce` · `clean` ·
-`pricing show|validate|set` · `examples list`.
+`compare` · `gate` · `report` · `exit-report` · `route-plan` ·
+`dataset validate|inspect|digest|create|split|redact` · `outcomes summarize` ·
+`workflow evaluate` · `replay sanitize` · `telemetry export` ·
+`runs list|show` · `reproduce` · `clean` · `pricing show|validate|set` ·
+`examples list`.
 
 Exit codes: `0` success · `1` constraints failed · `2` invalid input ·
 `3` provider unavailable · `4` partial run · `5` internal error.
@@ -302,17 +305,26 @@ run is identical.
 - Cost figures are estimates, not measured billing.
 - Deterministic providers simulate behavior; only Ollama / OpenAI-compatible runs
   reflect real models.
-- Small case counts yield low-confidence decisions.
+- Small case counts yield low-confidence or insufficient-evidence decisions;
+  confidence intervals do not make a weak dataset representative.
 - The Forge adapter exercises the provider layer, not full agent orchestration (roadmap).
+- Human outcomes and sanitized traces are only as complete as the local labels and
+  instrumentation supplied by the operator.
+- OpenTelemetry output is a versioned compatibility mapping, not a claim of full
+  or permanently stable semantic-convention conformance.
 
 ## Roadmap
 
-**v0.1** deterministic + Ollama + Forge + OpenAI-compatible providers, YAML suites,
-deterministic evaluators, cost/latency/reliability metrics, replacement decisions,
-cascade analysis, JSON/CSV/Markdown reports, offline tests. **v0.2** richer hosted
-adapters, compute-cost profiler, statistical confidence, variance analysis, CI
-regression gates, HTML dashboards. **v0.3** benchmark registries, signed manifests,
-distributed execution, richer tool-use evaluation.
+**Current alpha:** deterministic, Ollama, Forge, and OpenAI-compatible providers;
+YAML benchmark suites; strict private JSON/JSONL datasets; deterministic evaluators;
+cost, latency, reliability, statistical, and human-outcome evidence; CI regression
+gates; multi-turn/tool workflow evaluation; sanitized trace replay; portable
+OpenTelemetry-compatible exports; risk-aware routes; and static JSON, CSV, Markdown,
+and HTML reports.
+
+**Later candidates:** richer hosted adapters, benchmark registries, signed manifests,
+distributed execution, and broader workflow-evaluation fixtures. Roadmap items are
+not commitments and will retain the local-first, explicit-opt-in privacy model.
 
 ## Contributing
 
