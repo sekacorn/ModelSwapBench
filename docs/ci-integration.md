@@ -27,6 +27,8 @@ jobs:
         with: {python-version: "3.13"}
       - run: pip install modelswapbench
       - run: modelswapbench run benchmarks/regression.yaml
+      - run: modelswapbench compare latest
+      - run: modelswapbench gate evidence/baseline.json evidence/candidate.json --thresholds evidence/gates.json --format github
       - if: always()
         run: modelswapbench report latest --format markdown --output report.md
       - if: always()
@@ -43,3 +45,13 @@ secrets mapped to environment variables named in `api_key_env`.
 - `--dry-run` validates config + provider health without executing (fast PR check).
 - `modelswapbench validate` alone is a cheap lint step for suite files.
 - Store `.modelswapbench/` as a build artifact if you want run history per build.
+
+## Evidence gate statuses
+
+`gate` returns `0` only when configured checks pass, `1` for a measured
+regression, `2` for invalid artifacts or unsafe paths, and `4` for missing
+metrics or too few samples. Formats are `console`, `json`, `markdown`, `github`,
+and `junit`; GitHub output uses `GITHUB_STEP_SUMMARY` when present.
+
+A passing gate does not prove generalization. Thresholds inherit dataset bias,
+and cost checks inherit the age and accuracy of the declared pricing source.

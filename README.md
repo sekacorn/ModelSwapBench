@@ -8,6 +8,19 @@ before you commit to a vendor.
 
 > Status: **v0.1.0-alpha** — usable and fully offline-capable. APIs may change before 1.0.
 
+ModelSwapBench evaluates whether another model can replace an existing model
+for a real workflow while preserving quality, reliability, policy compliance,
+business outcomes, and acceptable cost.
+
+## Who should use this?
+
+- AI platform teams evaluating provider or model changes
+- Private and local AI teams validating offline alternatives
+- Regulated organizations and government contractors planning controlled routes
+- FinOps teams comparing estimated cost per successful outcome
+- Model evaluation researchers who need deterministic, portable evidence
+- Organizations planning to change providers without a blind cutover
+
 ---
 
 ## Why it exists
@@ -84,6 +97,25 @@ modelswapbench route-plan \
 
 The first example runs entirely with the **deterministic provider** — no paid
 model credentials and no model downloads required.
+
+## Private datasets and CI evidence
+
+Private evaluation datasets are local JSON or JSONL files with strict schemas,
+bounded inputs, stable case ordering, duplicate-key and duplicate-ID rejection,
+and deterministic SHA-256 digests. Cases can carry references, rubrics, expected
+tools, policy/citation expectations, risk, privacy, provenance, and outcomes.
+
+```bash
+modelswapbench dataset create --output private-evaluation.json
+modelswapbench dataset inspect private-evaluation.json
+modelswapbench dataset split private-evaluation.json --train 80 --test 20
+modelswapbench dataset redact private-evaluation.json --output redacted.json
+modelswapbench gate baseline.json candidate.json --thresholds gates.json --format junit
+```
+
+Gate exit `0` passes, `1` is a regression, `2` is invalid input, and `4` means
+evidence is insufficient. Quality and cost gates are only as reliable as the
+dataset and operator-supplied pricing assumptions.
 
 ## Run against a real local model (Ollama)
 

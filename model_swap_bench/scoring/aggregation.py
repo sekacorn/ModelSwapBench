@@ -7,6 +7,9 @@ from collections.abc import Sequence
 from model_swap_bench.config.models import Constraints, ModelCandidate
 from model_swap_bench.results import CaseResult, CaseStatus, ConstraintResult, EvalStatus, ModelSummary
 from model_swap_bench.scoring import economics, metrics
+from model_swap_bench.statistics import bootstrap_mean_interval, describe, wilson_interval
+
+MINIMUM_RECOMMENDED_SAMPLE_SIZE = 20
 
 
 def _has_eval(result: CaseResult, evaluator: str) -> bool:
@@ -39,7 +42,11 @@ def build_model_summary(
     tool_cases = [r for r in results if _has_eval(r, "tool_selection")]
     tool_pass = [r for r in tool_cases if _eval_passed(r, "tool_selection")]
 
-    quality = metrics.mean([r.quality_score for r in executed]) if executed else 0.0
+    quality_values = [r.quality_score for r in executed]
+    quality = metrics.mean(quality_values) if executed else 0.0
+    evidence_warnings: list[str] = []
+    if total < MINIMUM_RECOMMENDED_SAMPLE_SIZE:
+        evidence_warnings.append(f"insufficient evidence: {total} cases; at least {MINIMUM_RECOMMENDED_SAMPLE_SIZE} are recommended")
 
     return ModelSummary(
         model_alias=candidate.alias,
@@ -57,12 +64,21 @@ def build_model_summary(
         tool_accuracy=metrics.rate(len(tool_pass), len(tool_cases)) if tool_cases else None,
         avg_latency_ms=metrics.mean(latencies),
         median_latency_ms=metrics.median(latencies),
+        p90_latency_ms=metrics.percentile(latencies, 90),
         p95_latency_ms=metrics.percentile(latencies, 95),
         total_cost_usd=total_cost,
         cost_per_success_usd=economics.cost_per_success(total_cost, len(successful)),
         timeout_rate=metrics.rate(len(timed_out), total),
         retry_rate=metrics.rate(sum(1 for r in results if r.retries > 0), total),
         escalation_rate=metrics.rate(sum(1 for r in results if r.escalated), total),
+        error_rate=metrics.rate(len(errored), total),
+        success_rate_confidence_interval=wilson_interval(len(successful), total),
+        quality_confidence_interval=bootstrap_mean_interval(quality_values),
+        latency_distribution=describe(latencies),
+        quality_distribution=describe(quality_values),
+        minimum_recommended_sample_size=MINIMUM_RECOMMENDED_SAMPLE_SIZE,
+        evidence_sufficient=total >= MINIMUM_RECOMMENDED_SAMPLE_SIZE,
+        evidence_warnings=evidence_warnings,
     )
 
 

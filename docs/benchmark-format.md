@@ -4,6 +4,9 @@ A benchmark suite is a YAML (or JSON) file validated by typed Pydantic models.
 Unknown keys are rejected so typos surface as errors. Print the full JSON Schema
 with `modelswapbench schema`.
 
+Private evaluation datasets are a separate strict JSON/JSONL contract documented
+in [datasets.md](datasets.md); they are never loaded from remote URLs.
+
 ## Top-level keys
 
 | Key | Meaning |

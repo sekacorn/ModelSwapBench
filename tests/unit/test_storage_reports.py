@@ -83,7 +83,16 @@ async def test_reports_render(suite, tmp_repo_root) -> None:  # type: ignore[no-
     assert "Executive summary" in md and "Known limitations" in md
     assert "model_alias" in render_csv(run)
     assert '"run_id"' in render_json(run)
-    assert "<html" in render_html(run)
+    html = render_html(run)
+    assert "<html" in html and "Evidence summary" in html and "Limitations" in html
+
+
+def test_html_report_escapes_user_controlled_text() -> None:
+    from model_swap_bench.results import BenchmarkRun
+
+    rendered = render_html(BenchmarkRun(run_id="x", suite_name='<script>alert("x")</script>', suite_version="1", mode="test"))
+    assert "<script>" not in rendered
+    assert "&lt;script&gt;" in rendered
 
 
 async def test_latest_without_runs(tmp_repo_root) -> None:  # type: ignore[no-untyped-def]

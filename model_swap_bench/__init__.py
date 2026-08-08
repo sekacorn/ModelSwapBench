@@ -16,6 +16,8 @@ from model_swap_bench.errors import (
     ProviderUnavailableError,
     ValidationError,
 )
+from model_swap_bench.gates import GateArtifact, GateResult, GateThresholds, evaluate_gate
+from model_swap_bench.privacy import DataSafetyPreflight, provider_data_preflight
 
 __all__ = [
     "__version__",
@@ -25,4 +27,10 @@ __all__ = [
     "ProviderError",
     "ProviderUnavailableError",
     "ValidationError",
+    "DataSafetyPreflight",
+    "GateArtifact",
+    "GateResult",
+    "GateThresholds",
+    "evaluate_gate",
+    "provider_data_preflight",
 ]

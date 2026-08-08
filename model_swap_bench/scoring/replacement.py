@@ -89,9 +89,14 @@ def decide_replacement(
         )
 
     # Decision ladder.
-    if candidate.total_cases == 0 or (candidate.successful_cases == 0 and candidate.error_cases == candidate.total_cases):
+    if (
+        candidate.total_cases == 0
+        or (candidate.successful_cases == 0 and candidate.error_cases == candidate.total_cases)
+        or not candidate.evidence_sufficient
+    ):
         recommendation = INSUFFICIENT_EVIDENCE
         eligible = False
+        risks.extend(candidate.evidence_warnings)
     elif failed:
         eligible = False
         if (
@@ -111,7 +116,7 @@ def decide_replacement(
         eligible = True
         recommendation = RECOMMENDED
 
-    confidence = 0.9 if candidate.total_cases >= 5 else 0.6
+    confidence = 0.9 if candidate.total_cases >= candidate.minimum_recommended_sample_size else 0.4
     if cost_ratio is None:
         confidence -= 0.2
     confidence = max(0.1, min(1.0, confidence))

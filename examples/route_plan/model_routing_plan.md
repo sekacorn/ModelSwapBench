@@ -6,10 +6,10 @@ Migrate only low-risk candidate-routed tasks first; escalate blocked tasks and r
 
 ## Models Compared
 
-- Baseline model/provider: `baseline`
-- Candidate model/provider: `candidate`
+- Baseline model/provider: `openai:gpt-4o`
+- Candidate model/provider: `ollama:qwen2.5:3b`
 - Date generated: 2026-01-01T00:00:00+00:00
-- Benchmark input file or result source: `examples\route_plan\customer_support_routing_results.json`
+- Benchmark input file or result source: `customer_support_routing_results.json`
 
 ## Workload
 
@@ -27,18 +27,18 @@ Migrate only low-risk candidate-routed tasks first; escalate blocked tasks and r
 
 ## Task Routing Table
 
-| Task | Category | Route | Risk | Quality | Cost | Latency | Reason |
-|---|---|---|---|---:|---:|---:|---|
-| password-reset | account-help | `candidate_model` | low | 94.74% | 87.50% | -25.00% | Quality, risk, latency, and cost evidence support candidate routing. |
-| internal-summary | internal-summary | `candidate_model` | low | 94.62% | 88.89% | -25.00% | Quality, risk, latency, and cost evidence support candidate routing. |
-| billing-faq | billing-faq | `candidate_model` | medium | 91.30% | 83.33% | -13.64% | Quality, risk, latency, and cost evidence support candidate routing. |
-| refund-request | refund-request | `human_review` | medium | 85.56% | 82.14% | -23.08% | Candidate may be usable, but risk, sensitivity, or borderline evidence requires review. |
-| angry-customer-escalation | escalation | `human_review` | high | 92.31% | 78.13% | -14.29% | Candidate may be usable, but risk, sensitivity, or borderline evidence requires review. |
-| account-cancellation | account-cancellation | `baseline_model` | medium | 81.11% | 76.92% | 76.00% | Candidate has failure flags that make baseline routing safer. |
-| security-concern | security-concern | `human_review` | high | 92.47% | 77.14% | -13.33% | Candidate may be usable, but risk, sensitivity, or borderline evidence requires review. |
-| legal-question | legal | `blocked_or_escalate` | high | 93.62% | 77.50% | -12.50% | Task is blocked, regulated, escalated, or insufficiently evaluated. |
-| medical-question | medical | `blocked_or_escalate` | high | 91.21% | 77.50% | -9.38% | Task is blocked, regulated, escalated, or insufficiently evaluated. |
-| financial-question | financial | `blocked_or_escalate` | high | 92.39% | Unknown | -9.68% | Task is blocked, regulated, escalated, or insufficiently evaluated. |
+| Task | Route | Recommendation | Confidence | Samples | Risk | Unknowns | Review |
+|---|---|---|---|---:|---|---|---|
+| password-reset | `candidate_model` | Recommended replacement | medium | 30 | low | reliability, policy, human_outcome, business_outcome | Not required |
+| internal-summary | `candidate_model` | Recommended replacement | medium | 30 | low | reliability, policy, human_outcome, business_outcome | Not required |
+| billing-faq | `candidate_model` | Recommended replacement | medium | 30 | medium | reliability, policy, human_outcome, business_outcome | Not required |
+| refund-request | `human_review` | Recommended with conditions | medium | 30 | medium | reliability, policy, human_outcome, business_outcome | Required |
+| angry-customer-escalation | `human_review` | Recommended with conditions | medium | 30 | high | reliability, policy, human_outcome, business_outcome | Required |
+| account-cancellation | `baseline_model` | Not recommended | medium | 30 | medium | reliability, policy, human_outcome, business_outcome | Not required |
+| security-concern | `human_review` | Recommended with conditions | medium | 30 | high | reliability, policy, human_outcome, business_outcome | Required |
+| legal-question | `blocked_or_escalate` | Blocked pending review | medium | 30 | high | reliability, policy, human_outcome, business_outcome | Required |
+| medical-question | `blocked_or_escalate` | Blocked pending review | medium | 30 | high | reliability, policy, human_outcome, business_outcome | Required |
+| financial-question | `blocked_or_escalate` | Blocked pending review | medium | 30 | high | cost, reliability, policy, human_outcome, business_outcome | Required |
 
 ## Estimated Blended Cost Impact
 
@@ -52,12 +52,33 @@ Migrate only low-risk candidate-routed tasks first; escalate blocked tasks and r
 ## Risk and Human Review
 
 - `refund-request`: customer-facing
+  Evidence: quality 85.56%; cost 82.14%; latency -23.08%.
+  Escalation: Escalate to the baseline model and workflow owner.
+  Rollback: Rollback on quality, policy, reliability, or business-outcome regression.
 - `angry-customer-escalation`: angry; escalated; customer-facing
+  Evidence: quality 92.31%; cost 78.13%; latency -14.29%.
+  Escalation: Escalate to the baseline model and workflow owner.
+  Rollback: Rollback on quality, policy, reliability, or business-outcome regression.
 - `account-cancellation`: customer-facing
+  Evidence: quality 81.11%; cost 76.92%; latency 76.00%.
+  Escalation: Escalate to the baseline model and workflow owner.
+  Rollback: Rollback on quality, policy, reliability, or business-outcome regression.
 - `security-concern`: security-sensitive
+  Evidence: quality 92.47%; cost 77.14%; latency -13.33%.
+  Escalation: Escalate to the baseline model and workflow owner.
+  Rollback: Rollback on quality, policy, reliability, or business-outcome regression.
 - `legal-question`: requires-escalation
+  Evidence: quality 93.62%; cost 77.50%; latency -12.50%.
+  Escalation: Escalate to the baseline model and workflow owner.
+  Rollback: Rollback on quality, policy, reliability, or business-outcome regression.
 - `medical-question`: requires-escalation
+  Evidence: quality 91.21%; cost 77.50%; latency -9.38%.
+  Escalation: Escalate to the baseline model and workflow owner.
+  Rollback: Rollback on quality, policy, reliability, or business-outcome regression.
 - `financial-question`: requires-escalation; Cost is unknown; missing pricing was not treated as zero.
+  Evidence: quality 92.39%; cost Unknown; latency -9.68%.
+  Escalation: Escalate to the baseline model and workflow owner.
+  Rollback: Rollback on quality, policy, reliability, or business-outcome regression.
 
 ## Recommendation
 
@@ -78,9 +99,9 @@ Migrate only low-risk candidate-routed tasks first; escalate blocked tasks and r
 ## Reproducibility
 
 - CLI command used: `modelswapbench route-plan --input examples\route_plan\customer_support_routing_results.json --output examples\route_plan\model_routing_plan.md --format markdown --export-json examples\route_plan\model_routing_plan.json --export-aimeter examples\route_plan\aimeter_route_summary.json --export-auditlog examples\route_plan\route_audit_events.jsonl`
-- Input file path: `examples\route_plan\customer_support_routing_results.json`
+- Input file path: `customer_support_routing_results.json`
 - Run id: `route-plan-example-2026-01-01`
-- Package version: 0.1.0a6
+- Package version: 0.1.0a7
 - Timestamp: 2026-01-01T00:00:00+00:00
 - Python version: 3.13.12
 - Platform: Windows-11-10.0.26200-SP0

@@ -30,3 +30,13 @@ modelswapbench run suite.yaml --allow-hosted
 - Delete a run (scoped, confirmed): `modelswapbench clean RUN_ID`.
 
 See [provider-trust.md](provider-trust.md) and [../THREAT_MODEL.md](../THREAT_MODEL.md).
+
+## Dataset and replay preflight
+
+Datasets are local-only; HTTP(S) sources are rejected. Use `dataset redact`
+before sharing an artifact. Replay sanitization masks email addresses, phone
+numbers, common credentials and private keys, and hashes trace/case/task IDs.
+
+`replay sanitize` emits sanitized JSONL plus a preflight recording sensitive
+findings, redaction, provider mode, hosted consent, and whether content leaves
+the machine. Hosted execution remains blocked unless explicitly enabled.

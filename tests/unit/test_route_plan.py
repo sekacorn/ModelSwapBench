@@ -42,6 +42,7 @@ def _task(
     candidate_latency: str | None = "900",
     policy_flags: list[str] | None = None,
     failure_flags: list[str] | None = None,
+    sample_size: int = 30,
 ) -> TaskRoutingInput:
     return TaskRoutingInput(
         task_id=task_id,
@@ -55,6 +56,7 @@ def _task(
         candidate_latency=None if candidate_latency is None else Decimal(candidate_latency),
         policy_flags=policy_flags or [],
         failure_flags=failure_flags or [],
+        sample_size=sample_size,
     )
 
 

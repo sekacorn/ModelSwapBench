@@ -1,6 +1,6 @@
 {
-  "baseline_model": "baseline",
-  "candidate_model": "candidate",
+  "baseline_model": "openai:gpt-4o",
+  "candidate_model": "ollama:qwen2.5:3b",
   "cli_command": "modelswapbench route-plan --input examples\\route_plan\\customer_support_routing_results.json --output examples\\route_plan\\model_routing_plan.md --format markdown --export-json examples\\route_plan\\model_routing_plan.json --export-aimeter examples\\route_plan\\aimeter_route_summary.json --export-auditlog examples\\route_plan\\route_audit_events.jsonl",
   "generated_at": "2026-01-01T00:00:00Z",
   "limitations": [
@@ -14,13 +14,13 @@
     "Benchmark results do not prove universal safety.",
     "AIMeter and AIAuditLog outputs are portable file exports, not live runtime integrations."
   ],
-  "package_version": "0.1.0a6",
+  "package_version": "0.1.0a7",
   "platform": "Windows-11-10.0.26200-SP0",
   "python_version": "3.13.12",
   "recommendation": "Migrate only low-risk candidate-routed tasks first; escalate blocked tasks and review sensitive tasks before any rollout.",
   "risk_profile": "medium",
   "run_id": "route-plan-example-2026-01-01",
-  "source_path": "examples\\route_plan\\customer_support_routing_results.json",
+  "source_path": "customer_support_routing_results.json",
   "summary": {
     "baseline_model_pct": "10.0",
     "baseline_model_tasks": 1,
@@ -39,72 +39,193 @@
   "task_decisions": [
     {
       "category": "account-help",
+      "confidence_level": "medium",
       "cost_reduction_pct": "87.500",
       "cost_signal": "pass",
+      "escalation_path": "Escalate to the baseline model and workflow owner.",
+      "human_outcome_evidence": {
+        "business_success_rate": null,
+        "human_acceptance_rate": null
+      },
       "latency_delta_pct": "-25.00",
       "latency_signal": "pass",
+      "policy_evidence": {
+        "candidate_policy_pass_rate": null
+      },
       "policy_notes": [],
       "quality_retention_pct": "94.73684210526315789473684211",
       "quality_signal": "pass",
-      "reason": "Quality, risk, latency, and cost evidence support candidate routing.",
+      "reason": "Quality, reliability, policy, risk, latency, cost, and outcome evidence support candidate routing.",
+      "recommendation": "Recommended replacement",
+      "reliability_evidence": {
+        "baseline_success_rate": null,
+        "candidate_success_rate": null,
+        "sample_size": 30
+      },
+      "reproducibility_metadata": {
+        "dataset_digest": null,
+        "run_digest": null
+      },
+      "required_human_review": false,
       "risk_level": "low",
+      "rollback_trigger": "Rollback on quality, policy, reliability, or business-outcome regression.",
       "route": "candidate_model",
+      "sample_size": 30,
       "task_id": "password-reset",
+      "unknown_signals": [
+        "reliability",
+        "policy",
+        "human_outcome",
+        "business_outcome"
+      ],
       "warnings": []
     },
     {
       "category": "internal-summary",
+      "confidence_level": "medium",
       "cost_reduction_pct": "88.88888888888888888888888889",
       "cost_signal": "pass",
+      "escalation_path": "Escalate to the baseline model and workflow owner.",
+      "human_outcome_evidence": {
+        "business_success_rate": null,
+        "human_acceptance_rate": null
+      },
       "latency_delta_pct": "-25.00",
       "latency_signal": "pass",
+      "policy_evidence": {
+        "candidate_policy_pass_rate": null
+      },
       "policy_notes": [],
       "quality_retention_pct": "94.62365591397849462365591398",
       "quality_signal": "pass",
-      "reason": "Quality, risk, latency, and cost evidence support candidate routing.",
+      "reason": "Quality, reliability, policy, risk, latency, cost, and outcome evidence support candidate routing.",
+      "recommendation": "Recommended replacement",
+      "reliability_evidence": {
+        "baseline_success_rate": null,
+        "candidate_success_rate": null,
+        "sample_size": 30
+      },
+      "reproducibility_metadata": {
+        "dataset_digest": null,
+        "run_digest": null
+      },
+      "required_human_review": false,
       "risk_level": "low",
+      "rollback_trigger": "Rollback on quality, policy, reliability, or business-outcome regression.",
       "route": "candidate_model",
+      "sample_size": 30,
       "task_id": "internal-summary",
+      "unknown_signals": [
+        "reliability",
+        "policy",
+        "human_outcome",
+        "business_outcome"
+      ],
       "warnings": []
     },
     {
       "category": "billing-faq",
+      "confidence_level": "medium",
       "cost_reduction_pct": "83.33333333333333333333333333",
       "cost_signal": "pass",
+      "escalation_path": "Escalate to the baseline model and workflow owner.",
+      "human_outcome_evidence": {
+        "business_success_rate": null,
+        "human_acceptance_rate": null
+      },
       "latency_delta_pct": "-13.63636363636363636363636364",
       "latency_signal": "pass",
+      "policy_evidence": {
+        "candidate_policy_pass_rate": null
+      },
       "policy_notes": [],
       "quality_retention_pct": "91.30434782608695652173913043",
       "quality_signal": "pass",
-      "reason": "Quality, risk, latency, and cost evidence support candidate routing.",
+      "reason": "Quality, reliability, policy, risk, latency, cost, and outcome evidence support candidate routing.",
+      "recommendation": "Recommended replacement",
+      "reliability_evidence": {
+        "baseline_success_rate": null,
+        "candidate_success_rate": null,
+        "sample_size": 30
+      },
+      "reproducibility_metadata": {
+        "dataset_digest": null,
+        "run_digest": null
+      },
+      "required_human_review": false,
       "risk_level": "medium",
+      "rollback_trigger": "Rollback on quality, policy, reliability, or business-outcome regression.",
       "route": "candidate_model",
+      "sample_size": 30,
       "task_id": "billing-faq",
+      "unknown_signals": [
+        "reliability",
+        "policy",
+        "human_outcome",
+        "business_outcome"
+      ],
       "warnings": []
     },
     {
       "category": "refund-request",
+      "confidence_level": "medium",
       "cost_reduction_pct": "82.14285714285714285714285714",
       "cost_signal": "pass",
+      "escalation_path": "Escalate to the baseline model and workflow owner.",
+      "human_outcome_evidence": {
+        "business_success_rate": null,
+        "human_acceptance_rate": null
+      },
       "latency_delta_pct": "-23.07692307692307692307692308",
       "latency_signal": "pass",
+      "policy_evidence": {
+        "candidate_policy_pass_rate": null
+      },
       "policy_notes": [
         "customer-facing"
       ],
       "quality_retention_pct": "85.55555555555555555555555556",
       "quality_signal": "pass",
-      "reason": "Candidate may be usable, but risk, sensitivity, or borderline evidence requires review.",
+      "reason": "Candidate may be usable, but risk, sensitivity, outcomes, or evidence strength requires review.",
+      "recommendation": "Recommended with conditions",
+      "reliability_evidence": {
+        "baseline_success_rate": null,
+        "candidate_success_rate": null,
+        "sample_size": 30
+      },
+      "reproducibility_metadata": {
+        "dataset_digest": null,
+        "run_digest": null
+      },
+      "required_human_review": true,
       "risk_level": "medium",
+      "rollback_trigger": "Rollback on quality, policy, reliability, or business-outcome regression.",
       "route": "human_review",
+      "sample_size": 30,
       "task_id": "refund-request",
+      "unknown_signals": [
+        "reliability",
+        "policy",
+        "human_outcome",
+        "business_outcome"
+      ],
       "warnings": []
     },
     {
       "category": "escalation",
+      "confidence_level": "medium",
       "cost_reduction_pct": "78.12500",
       "cost_signal": "pass",
+      "escalation_path": "Escalate to the baseline model and workflow owner.",
+      "human_outcome_evidence": {
+        "business_success_rate": null,
+        "human_acceptance_rate": null
+      },
       "latency_delta_pct": "-14.28571428571428571428571429",
       "latency_signal": "pass",
+      "policy_evidence": {
+        "candidate_policy_pass_rate": null
+      },
       "policy_notes": [
         "angry",
         "escalated",
@@ -112,95 +233,255 @@
       ],
       "quality_retention_pct": "92.30769230769230769230769231",
       "quality_signal": "pass",
-      "reason": "Candidate may be usable, but risk, sensitivity, or borderline evidence requires review.",
+      "reason": "Candidate may be usable, but risk, sensitivity, outcomes, or evidence strength requires review.",
+      "recommendation": "Recommended with conditions",
+      "reliability_evidence": {
+        "baseline_success_rate": null,
+        "candidate_success_rate": null,
+        "sample_size": 30
+      },
+      "reproducibility_metadata": {
+        "dataset_digest": null,
+        "run_digest": null
+      },
+      "required_human_review": true,
       "risk_level": "high",
+      "rollback_trigger": "Rollback on quality, policy, reliability, or business-outcome regression.",
       "route": "human_review",
+      "sample_size": 30,
       "task_id": "angry-customer-escalation",
+      "unknown_signals": [
+        "reliability",
+        "policy",
+        "human_outcome",
+        "business_outcome"
+      ],
       "warnings": []
     },
     {
       "category": "account-cancellation",
+      "confidence_level": "medium",
       "cost_reduction_pct": "76.92307692307692307692307692",
       "cost_signal": "pass",
+      "escalation_path": "Escalate to the baseline model and workflow owner.",
+      "human_outcome_evidence": {
+        "business_success_rate": null,
+        "human_acceptance_rate": null
+      },
       "latency_delta_pct": "76.00",
       "latency_signal": "fail",
+      "policy_evidence": {
+        "candidate_policy_pass_rate": null
+      },
       "policy_notes": [
         "customer-facing"
       ],
       "quality_retention_pct": "81.11111111111111111111111111",
       "quality_signal": "pass",
       "reason": "Candidate has failure flags that make baseline routing safer.",
+      "recommendation": "Not recommended",
+      "reliability_evidence": {
+        "baseline_success_rate": null,
+        "candidate_success_rate": null,
+        "sample_size": 30
+      },
+      "reproducibility_metadata": {
+        "dataset_digest": null,
+        "run_digest": null
+      },
+      "required_human_review": false,
       "risk_level": "medium",
+      "rollback_trigger": "Rollback on quality, policy, reliability, or business-outcome regression.",
       "route": "baseline_model",
+      "sample_size": 30,
       "task_id": "account-cancellation",
+      "unknown_signals": [
+        "reliability",
+        "policy",
+        "human_outcome",
+        "business_outcome"
+      ],
       "warnings": []
     },
     {
       "category": "security-concern",
+      "confidence_level": "medium",
       "cost_reduction_pct": "77.14285714285714285714285714",
       "cost_signal": "pass",
+      "escalation_path": "Escalate to the baseline model and workflow owner.",
+      "human_outcome_evidence": {
+        "business_success_rate": null,
+        "human_acceptance_rate": null
+      },
       "latency_delta_pct": "-13.33333333333333333333333333",
       "latency_signal": "pass",
+      "policy_evidence": {
+        "candidate_policy_pass_rate": null
+      },
       "policy_notes": [
         "security-sensitive"
       ],
       "quality_retention_pct": "92.47311827956989247311827957",
       "quality_signal": "pass",
-      "reason": "Candidate may be usable, but risk, sensitivity, or borderline evidence requires review.",
+      "reason": "Candidate may be usable, but risk, sensitivity, outcomes, or evidence strength requires review.",
+      "recommendation": "Recommended with conditions",
+      "reliability_evidence": {
+        "baseline_success_rate": null,
+        "candidate_success_rate": null,
+        "sample_size": 30
+      },
+      "reproducibility_metadata": {
+        "dataset_digest": null,
+        "run_digest": null
+      },
+      "required_human_review": true,
       "risk_level": "high",
+      "rollback_trigger": "Rollback on quality, policy, reliability, or business-outcome regression.",
       "route": "human_review",
+      "sample_size": 30,
       "task_id": "security-concern",
+      "unknown_signals": [
+        "reliability",
+        "policy",
+        "human_outcome",
+        "business_outcome"
+      ],
       "warnings": []
     },
     {
       "category": "legal",
+      "confidence_level": "medium",
       "cost_reduction_pct": "77.500",
       "cost_signal": "pass",
+      "escalation_path": "Escalate to the baseline model and workflow owner.",
+      "human_outcome_evidence": {
+        "business_success_rate": null,
+        "human_acceptance_rate": null
+      },
       "latency_delta_pct": "-12.500",
       "latency_signal": "pass",
+      "policy_evidence": {
+        "candidate_policy_pass_rate": null
+      },
       "policy_notes": [
         "requires-escalation"
       ],
       "quality_retention_pct": "93.61702127659574468085106383",
       "quality_signal": "pass",
       "reason": "Task is blocked, regulated, escalated, or insufficiently evaluated.",
+      "recommendation": "Blocked pending review",
+      "reliability_evidence": {
+        "baseline_success_rate": null,
+        "candidate_success_rate": null,
+        "sample_size": 30
+      },
+      "reproducibility_metadata": {
+        "dataset_digest": null,
+        "run_digest": null
+      },
+      "required_human_review": true,
       "risk_level": "high",
+      "rollback_trigger": "Rollback on quality, policy, reliability, or business-outcome regression.",
       "route": "blocked_or_escalate",
+      "sample_size": 30,
       "task_id": "legal-question",
+      "unknown_signals": [
+        "reliability",
+        "policy",
+        "human_outcome",
+        "business_outcome"
+      ],
       "warnings": []
     },
     {
       "category": "medical",
+      "confidence_level": "medium",
       "cost_reduction_pct": "77.500",
       "cost_signal": "pass",
+      "escalation_path": "Escalate to the baseline model and workflow owner.",
+      "human_outcome_evidence": {
+        "business_success_rate": null,
+        "human_acceptance_rate": null
+      },
       "latency_delta_pct": "-9.37500",
       "latency_signal": "pass",
+      "policy_evidence": {
+        "candidate_policy_pass_rate": null
+      },
       "policy_notes": [
         "requires-escalation"
       ],
       "quality_retention_pct": "91.20879120879120879120879121",
       "quality_signal": "pass",
       "reason": "Task is blocked, regulated, escalated, or insufficiently evaluated.",
+      "recommendation": "Blocked pending review",
+      "reliability_evidence": {
+        "baseline_success_rate": null,
+        "candidate_success_rate": null,
+        "sample_size": 30
+      },
+      "reproducibility_metadata": {
+        "dataset_digest": null,
+        "run_digest": null
+      },
+      "required_human_review": true,
       "risk_level": "high",
+      "rollback_trigger": "Rollback on quality, policy, reliability, or business-outcome regression.",
       "route": "blocked_or_escalate",
+      "sample_size": 30,
       "task_id": "medical-question",
+      "unknown_signals": [
+        "reliability",
+        "policy",
+        "human_outcome",
+        "business_outcome"
+      ],
       "warnings": []
     },
     {
       "category": "financial",
+      "confidence_level": "medium",
       "cost_reduction_pct": null,
       "cost_signal": "unknown",
+      "escalation_path": "Escalate to the baseline model and workflow owner.",
+      "human_outcome_evidence": {
+        "business_success_rate": null,
+        "human_acceptance_rate": null
+      },
       "latency_delta_pct": "-9.677419354838709677419354839",
       "latency_signal": "pass",
+      "policy_evidence": {
+        "candidate_policy_pass_rate": null
+      },
       "policy_notes": [
         "requires-escalation"
       ],
       "quality_retention_pct": "92.39130434782608695652173913",
       "quality_signal": "pass",
       "reason": "Task is blocked, regulated, escalated, or insufficiently evaluated.",
+      "recommendation": "Blocked pending review",
+      "reliability_evidence": {
+        "baseline_success_rate": null,
+        "candidate_success_rate": null,
+        "sample_size": 30
+      },
+      "reproducibility_metadata": {
+        "dataset_digest": null,
+        "run_digest": null
+      },
+      "required_human_review": true,
       "risk_level": "high",
+      "rollback_trigger": "Rollback on quality, policy, reliability, or business-outcome regression.",
       "route": "blocked_or_escalate",
+      "sample_size": 30,
       "task_id": "financial-question",
+      "unknown_signals": [
+        "cost",
+        "reliability",
+        "policy",
+        "human_outcome",
+        "business_outcome"
+      ],
       "warnings": [
         "Cost is unknown; missing pricing was not treated as zero."
       ]
@@ -218,7 +499,10 @@
     "high_risk_requires_review": true,
     "max_latency_increase_pct": "50.0",
     "min_cost_reduction_pct": "20.0",
-    "min_quality_retention_pct": "80.0"
+    "min_quality_retention_pct": "80.0",
+    "minimum_business_success_rate": null,
+    "minimum_policy_pass_rate": "1",
+    "minimum_sample_size": 20
   },
   "workload": "Customer support routing"
 }

@@ -27,9 +27,19 @@ app = typer.Typer(
 runs_app = typer.Typer(help="Inspect stored runs.", no_args_is_help=True)
 pricing_app = typer.Typer(help="Manage the pricing registry.", no_args_is_help=True)
 examples_app = typer.Typer(help="Bundled examples.", no_args_is_help=True)
+dataset_app = typer.Typer(help="Manage private local evaluation datasets.", no_args_is_help=True)
+outcomes_app = typer.Typer(help="Import and summarize human outcome labels.", no_args_is_help=True)
+workflow_app = typer.Typer(help="Evaluate multi-turn and tool workflow traces.", no_args_is_help=True)
+replay_app = typer.Typer(help="Sanitize local production trace replays.", no_args_is_help=True)
+telemetry_app = typer.Typer(help="Export portable OpenTelemetry-compatible records.", no_args_is_help=True)
 app.add_typer(runs_app, name="runs")
 app.add_typer(pricing_app, name="pricing")
 app.add_typer(examples_app, name="examples")
+app.add_typer(dataset_app, name="dataset")
+app.add_typer(outcomes_app, name="outcomes")
+app.add_typer(workflow_app, name="workflow")
+app.add_typer(replay_app, name="replay")
+app.add_typer(telemetry_app, name="telemetry")
 
 VERBOSE = {"on": False}
 
@@ -364,6 +374,145 @@ def pricing_set(
 def examples_list() -> None:
     """List bundled examples."""
     commands.examples_list()
+
+
+@dataset_app.command("validate")
+@guard
+def dataset_validate(path: Annotated[Path, typer.Argument(help="Local dataset JSON or JSONL file.")]) -> None:
+    """Strictly validate a private evaluation dataset."""
+    commands.dataset_validate(path)
+
+
+@dataset_app.command("inspect")
+@guard
+def dataset_inspect(path: Annotated[Path, typer.Argument(help="Local dataset JSON or JSONL file.")]) -> None:
+    """Show bounded metadata and the deterministic dataset digest."""
+    commands.dataset_inspect(path)
+
+
+@dataset_app.command("digest")
+@guard
+def dataset_digest(path: Annotated[Path, typer.Argument(help="Local dataset JSON or JSONL file.")]) -> None:
+    """Print the deterministic SHA-256 dataset digest."""
+    commands.dataset_print_digest(path)
+
+
+@dataset_app.command("create")
+@guard
+def dataset_create(
+    output_file: Annotated[Path, typer.Option("--output", help="New .json or .jsonl dataset path.")],
+    dataset_id: Annotated[str, typer.Option("--dataset-id", help="Stable dataset identifier.")] = "private-evaluation",
+    name: Annotated[str, typer.Option("--name", help="Human-readable dataset name.")] = "Private evaluation dataset",
+) -> None:
+    """Create a local private-dataset template without personal identity."""
+    commands.dataset_create(output_file, dataset_id=dataset_id, name=name)
+
+
+@dataset_app.command("split")
+@guard
+def dataset_split(
+    path: Annotated[Path, typer.Argument(help="Local dataset JSON or JSONL file.")],
+    train: Annotated[int, typer.Option("--train", help="Deterministic training percentage.")] = 80,
+    test: Annotated[int, typer.Option("--test", help="Deterministic evaluation percentage.")] = 20,
+    train_output: Annotated[Path | None, typer.Option("--train-output")] = None,
+    test_output: Annotated[Path | None, typer.Option("--test-output")] = None,
+) -> None:
+    """Create deterministic train/evaluation partitions; this does not prove generalization."""
+    commands.dataset_split(
+        path,
+        train_percent=train,
+        test_percent=test,
+        train_output=train_output,
+        test_output=test_output,
+    )
+
+
+@dataset_app.command("redact")
+@guard
+def dataset_redact(
+    path: Annotated[Path, typer.Argument(help="Local dataset JSON or JSONL file.")],
+    output_file: Annotated[Path, typer.Option("--output", help="Sanitized output path.")],
+) -> None:
+    """Mask common identifiers and credentials in a local dataset copy."""
+    commands.dataset_redact(path, output_path=output_file)
+
+
+@app.command("gate")
+@guard
+def gate_cmd(
+    baseline: Annotated[Path, typer.Argument(help="Baseline gate artifact JSON.")],
+    candidate: Annotated[Path, typer.Argument(help="Candidate gate artifact JSON.")],
+    thresholds: Annotated[Path | None, typer.Option("--thresholds", help="Gate threshold JSON.")] = None,
+    fmt: Annotated[str, typer.Option("--format", help="console|json|markdown|github|junit")] = "console",
+    output_file: Annotated[Path | None, typer.Option("--output", help="Write rendered gate output.")] = None,
+) -> None:
+    """Compare candidate evidence with a baseline and return a deterministic CI exit code."""
+    code = commands.gate(baseline, candidate, thresholds_path=thresholds, fmt=fmt, output_path=output_file)
+    if code is not ExitCode.SUCCESS:
+        raise typer.Exit(code=int(code))
+
+
+@outcomes_app.command("summarize")
+@guard
+def outcomes_summarize(
+    path: Annotated[Path, typer.Argument(help="Local human-outcome JSONL file.")],
+    output_file: Annotated[Path | None, typer.Option("--output")] = None,
+) -> None:
+    """Aggregate pseudonymous human and business outcome labels."""
+    commands.outcomes_summarize(path, output_path=output_file)
+
+
+@workflow_app.command("evaluate")
+@guard
+def workflow_evaluate(
+    path: Annotated[Path, typer.Argument(help="Workflow trace JSONL file.")],
+    output_file: Annotated[Path, typer.Option("--output")],
+    step_limit: Annotated[int, typer.Option("--step-limit", min=1, max=500)] = 100,
+) -> None:
+    """Evaluate complete multi-turn and tool workflows as decision units."""
+    commands.workflow_evaluate(path, output_path=output_file, step_limit=step_limit)
+
+
+@replay_app.command("sanitize")
+@guard
+def replay_sanitize(
+    path: Annotated[Path, typer.Argument(help="Local replay JSONL file.")],
+    output_file: Annotated[Path, typer.Option("--output")],
+    preflight_file: Annotated[Path, typer.Option("--preflight-output")],
+    provider_mode: Annotated[str, typer.Option("--provider-mode", help="local|self_hosted|hosted")] = "local",
+    allow_hosted: Annotated[bool, typer.Option("--allow-hosted")] = False,
+    omit_content: Annotated[bool, typer.Option("--omit-content")] = False,
+    excerpt_length: Annotated[int, typer.Option("--excerpt-length", min=0, max=65_536)] = 2048,
+) -> None:
+    """Sanitize trace replay data and emit a provider/data-safety preflight."""
+    commands.replay_sanitize(
+        path,
+        output_path=output_file,
+        preflight_path=preflight_file,
+        provider_mode=provider_mode,
+        allow_hosted=allow_hosted,
+        omit_content=omit_content,
+        excerpt_length=excerpt_length,
+    )
+
+
+@telemetry_app.command("export")
+@guard
+def telemetry_export(
+    path: Annotated[Path, typer.Argument(help="Workflow trace JSONL file.")],
+    output_file: Annotated[Path, typer.Option("--output")],
+    dataset_id: Annotated[str, typer.Option("--dataset-id")],
+    dataset_digest: Annotated[str, typer.Option("--dataset-digest")],
+    run_id: Annotated[str, typer.Option("--run-id")],
+) -> None:
+    """Export deterministic OpenTelemetry-compatible JSONL records."""
+    commands.telemetry_export(
+        path,
+        output_path=output_file,
+        dataset_id=dataset_id,
+        dataset_digest_value=dataset_digest,
+        run_id=run_id,
+    )
 
 
 _STARTER_SUITE = """name: {name}

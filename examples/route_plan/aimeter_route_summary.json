@@ -1,6 +1,6 @@
 {
-  "baseline_model": "baseline",
-  "candidate_model": "candidate",
+  "baseline_model": "openai:gpt-4o",
+  "candidate_model": "ollama:qwen2.5:3b",
   "cost": {
     "baseline_total_estimated_cost": {
       "amount": null,
@@ -65,10 +65,10 @@
   "source": {
     "component": "route-plan",
     "export_type": "aimeter-oss-style-route-cost-outcome-summary",
-    "input_path": "examples\\route_plan\\customer_support_routing_results.json",
+    "input_path": "customer_support_routing_results.json",
     "integration_mode": "offline-file-export",
     "service": "modelswapbench",
-    "version": "0.1.0a6"
+    "version": "0.1.0a7"
   },
   "workload": "Customer support routing"
 }

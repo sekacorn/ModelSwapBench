@@ -12,6 +12,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from model_swap_bench.statistics import ConfidenceInterval, DistributionEvidence
+
 
 def utcnow() -> datetime:
     """Timezone-aware UTC now (avoids naive-datetime bugs)."""
@@ -144,12 +146,21 @@ class ModelSummary(BaseModel):
     tool_accuracy: float | None = None
     avg_latency_ms: float = 0.0
     median_latency_ms: float = 0.0
+    p90_latency_ms: float = 0.0
     p95_latency_ms: float = 0.0
     total_cost_usd: float = 0.0
     cost_per_success_usd: float | None = None
     timeout_rate: float = 0.0
     retry_rate: float = 0.0
     escalation_rate: float = 0.0
+    error_rate: float = 0.0
+    success_rate_confidence_interval: ConfidenceInterval | None = None
+    quality_confidence_interval: ConfidenceInterval | None = None
+    latency_distribution: DistributionEvidence | None = None
+    quality_distribution: DistributionEvidence | None = None
+    minimum_recommended_sample_size: int = 20
+    evidence_sufficient: bool = True
+    evidence_warnings: list[str] = Field(default_factory=list)
 
 
 class ReplacementDecision(BaseModel):

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from decimal import Decimal
 from pathlib import Path
 
@@ -11,11 +12,29 @@ from pydantic import ValidationError as PydanticValidationError
 from model_swap_bench.cli import output
 from model_swap_bench.config import load_suite, schema_json
 from model_swap_bench.config.models import BenchmarkSuite, ProviderKind
+from model_swap_bench.datasets import (
+    create_dataset,
+    dataset_digest,
+    inspect_dataset,
+    redact_dataset,
+    split_dataset,
+    write_dataset,
+)
+from model_swap_bench.datasets import load_dataset as read_local_evaluation
 from model_swap_bench.errors import ConfigError, ExitCode, ProviderUnavailableError
 from model_swap_bench.evaluators import registered_names
 from model_swap_bench.execution import BenchmarkRunner
+from model_swap_bench.gates import evaluate_gate, load_gate_artifact, load_gate_thresholds, render_gate
+from model_swap_bench.outcomes import aggregate_outcomes, load_outcomes_jsonl
+from model_swap_bench.portable import bounded_diagnostic, ensure_distinct_paths, load_json, pretty_json, read_bounded_text
 from model_swap_bench.pricing import WARNING, PricingRegistry
 from model_swap_bench.providers.base import build_provider
+from model_swap_bench.replay import (
+    build_replay_preflight,
+    load_replay_jsonl,
+    render_replay_jsonl,
+    sanitize_replay,
+)
 from model_swap_bench.reports import RENDERERS
 from model_swap_bench.reports.exit_report import (
     ExitReportThresholds,
@@ -39,6 +58,8 @@ from model_swap_bench.reports.route_plan import (
 )
 from model_swap_bench.results import BenchmarkRun, CaseStatus
 from model_swap_bench.storage import RunRepository
+from model_swap_bench.telemetry import render_otel_jsonl, workflow_to_otel
+from model_swap_bench.workflows import WorkflowTrace, evaluate_workflow
 
 # ---------------------------------------------------------------------------
 # Inspection commands
@@ -499,9 +520,191 @@ EXAMPLES = [
     ("cascade-routing", "Cheap local model first, escalate failures to a stronger fixture model."),
     ("vendor_exit", "AI Vendor Exit Report input and sample Markdown output."),
     ("route_plan", "Model Routing Plan input and sample Markdown/JSON outputs."),
+    ("evidence-driven-exit", "Private datasets, workflow evidence, CI gates, routes, telemetry, and replay (offline)."),
 ]
 
 
 def examples_list() -> None:
     rows = [(name, desc) for name, desc in EXAMPLES]
     output.table("Bundled examples (examples/<name>/benchmark.yaml)", ["example", "description"], rows)
+
+
+# ---------------------------------------------------------------------------
+# Private datasets and evidence artifacts
+# ---------------------------------------------------------------------------
+
+
+def dataset_validate(path: Path) -> None:
+    # This bounded local loader rejects URL schemes before opening a path.
+    dataset = read_local_evaluation(path)  # nosec B615
+    output.success(f"{path.name} is valid: {dataset.dataset_id} v{dataset.dataset_version} ({len(dataset.cases)} cases)")
+
+
+def dataset_inspect(path: Path) -> None:
+    # This bounded local loader rejects URL schemes before opening a path.
+    dataset = read_local_evaluation(path)  # nosec B615
+    output.info(pretty_json(inspect_dataset(dataset)))
+
+
+def dataset_print_digest(path: Path) -> None:
+    # This bounded local loader rejects URL schemes before opening a path.
+    dataset = read_local_evaluation(path)  # nosec B615
+    output.info(dataset_digest(dataset))
+
+
+def dataset_create(path: Path, *, dataset_id: str, name: str) -> None:
+    if path.exists():
+        raise ConfigError(f"refusing to overwrite existing dataset: {path}")
+    write_dataset(create_dataset(dataset_id=dataset_id, name=name), path)
+    output.success(f"dataset template written to {path}")
+
+
+def dataset_split(
+    path: Path,
+    *,
+    train_percent: int,
+    test_percent: int,
+    train_output: Path | None,
+    test_output: Path | None,
+) -> None:
+    # This bounded local loader rejects URL schemes before opening a path.
+    dataset = read_local_evaluation(path)  # nosec B615
+    suffix = path.suffix if path.suffix.lower() in {".json", ".jsonl"} else ".json"
+    train_path = train_output or path.with_name(f"{path.stem}.train{suffix}")
+    test_path = test_output or path.with_name(f"{path.stem}.evaluation{suffix}")
+    ensure_distinct_paths(path, train_path)
+    ensure_distinct_paths(path, test_path)
+    if train_path.resolve(strict=False) == test_path.resolve(strict=False):
+        raise ConfigError("train and evaluation output paths must differ")
+    train, test = split_dataset(dataset, train_percent=train_percent, test_percent=test_percent)
+    write_dataset(train, train_path)
+    write_dataset(test, test_path)
+    output.success(f"wrote {len(train.cases)} training cases to {train_path}")
+    output.success(f"wrote {len(test.cases)} evaluation cases to {test_path}")
+    output.warn("A deterministic split supports workflow hygiene; it does not prove model generalization.")
+
+
+def dataset_redact(path: Path, *, output_path: Path) -> None:
+    ensure_distinct_paths(path, output_path)
+    # This bounded local loader rejects URL schemes before opening a path.
+    dataset = read_local_evaluation(path)  # nosec B615
+    redacted = redact_dataset(dataset)
+    write_dataset(redacted, output_path)
+    output.success(f"redacted dataset written to {output_path}")
+
+
+def gate(
+    baseline_path: Path,
+    candidate_path: Path,
+    *,
+    thresholds_path: Path | None,
+    fmt: str,
+    output_path: Path | None,
+) -> ExitCode:
+    if baseline_path.resolve(strict=False) == candidate_path.resolve(strict=False):
+        raise ConfigError("baseline and candidate artifacts must differ")
+    baseline = load_gate_artifact(baseline_path)
+    candidate = load_gate_artifact(candidate_path)
+    result = evaluate_gate(baseline, candidate, load_gate_thresholds(thresholds_path))
+    rendered = render_gate(result, fmt)
+    selected_output = output_path
+    if fmt == "github" and selected_output is None and os.environ.get("GITHUB_STEP_SUMMARY"):
+        selected_output = Path(os.environ["GITHUB_STEP_SUMMARY"])
+    if selected_output:
+        selected_output.parent.mkdir(parents=True, exist_ok=True)
+        selected_output.write_text(rendered, encoding="utf-8")
+        output.success(f"gate {fmt} output written to {selected_output}")
+    else:
+        output.info(rendered)
+    return ExitCode(result.exit_code)
+
+
+def outcomes_summarize(path: Path, *, output_path: Path | None) -> None:
+    summary = aggregate_outcomes(load_outcomes_jsonl(path))
+    text = pretty_json(summary.model_dump(mode="json"))
+    if output_path:
+        ensure_distinct_paths(path, output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(text, encoding="utf-8")
+        output.success(f"outcome summary written to {output_path}")
+    else:
+        output.info(text)
+
+
+def _load_workflow_jsonl(path: Path) -> list[WorkflowTrace]:
+    traces: list[WorkflowTrace] = []
+    for line_number, line in enumerate(read_bounded_text(path, max_bytes=20 * 1024 * 1024).splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            traces.append(WorkflowTrace.model_validate(load_json(line, source=f"{path.name}:{line_number}")))
+        except PydanticValidationError as exc:
+            raise ConfigError(f"invalid workflow trace at line {line_number}: {bounded_diagnostic(exc)}") from exc
+    return traces
+
+
+def workflow_evaluate(path: Path, *, output_path: Path, step_limit: int) -> None:
+    ensure_distinct_paths(path, output_path)
+    traces = _load_workflow_jsonl(path)
+    payload = {
+        "schema_version": "modelswapbench.workflow-evaluation.v1",
+        "traces": [evaluate_workflow(trace, step_limit=step_limit).model_dump(mode="json") for trace in traces],
+    }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(pretty_json(payload), encoding="utf-8")
+    output.success(f"evaluated {len(traces)} workflow traces into {output_path}")
+
+
+def replay_sanitize(
+    path: Path,
+    *,
+    output_path: Path,
+    preflight_path: Path,
+    provider_mode: str,
+    allow_hosted: bool,
+    omit_content: bool,
+    excerpt_length: int,
+) -> None:
+    if provider_mode not in {"local", "self_hosted", "hosted"}:
+        raise ConfigError("provider mode must be local, self_hosted, or hosted")
+    ensure_distinct_paths(path, output_path)
+    ensure_distinct_paths(path, preflight_path)
+    traces = load_replay_jsonl(path)
+    sanitized, findings = sanitize_replay(traces, omit_content=omit_content, excerpt_length=excerpt_length)
+    preflight = build_replay_preflight(
+        traces,
+        findings,
+        provider_mode=provider_mode,
+        hosted_execution_enabled=allow_hosted,
+        redaction_applied=True,
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(render_replay_jsonl(sanitized), encoding="utf-8")
+    preflight_path.parent.mkdir(parents=True, exist_ok=True)
+    preflight_path.write_text(pretty_json(preflight.model_dump(mode="json")), encoding="utf-8")
+    output.success(f"sanitized {len(sanitized)} local replay traces into {output_path}")
+    output.info(f"preflight written to {preflight_path}; content_leaves_machine={preflight.content_leaves_machine}")
+
+
+def telemetry_export(
+    path: Path,
+    *,
+    output_path: Path,
+    dataset_id: str,
+    dataset_digest_value: str,
+    run_id: str,
+) -> None:
+    ensure_distinct_paths(path, output_path)
+    traces = _load_workflow_jsonl(path)
+    records = [
+        workflow_to_otel(
+            trace,
+            dataset_id=dataset_id,
+            dataset_digest=dataset_digest_value,
+            benchmark_run_id=run_id,
+        )
+        for trace in traces
+    ]
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(render_otel_jsonl(records), encoding="utf-8")
+    output.success(f"OpenTelemetry-compatible JSONL written to {output_path}")

@@ -32,6 +32,7 @@ MAX_TASKS = 10_000
 MAX_METRIC_VALUE = Decimal("1e9")
 MIN_NONZERO_METRIC_VALUE = Decimal("1e-9")
 MAX_METRIC_DIGITS = 50
+DEFAULT_MINIMUM_SAMPLE_SIZE = 20
 RISK_PROFILES = frozenset({"low", "medium", "high", "regulated"})
 BLOCKED_RISK_TERMS = frozenset(
     {
@@ -90,9 +91,20 @@ class TaskRoutingInput(_Strict):
     candidate_latency: Decimal | None = None
     baseline_cost: Decimal | None = None
     candidate_cost: Decimal | None = None
+    baseline_success_rate: Decimal | None = None
+    candidate_success_rate: Decimal | None = None
+    candidate_policy_pass_rate: Decimal | None = None
+    candidate_human_acceptance_rate: Decimal | None = None
+    candidate_business_success_rate: Decimal | None = None
+    sample_size: int = Field(default=0, ge=0, le=1_000_000)
     policy_flags: list[str] = Field(default_factory=list, max_length=100)
     failure_flags: list[str] = Field(default_factory=list, max_length=100)
     notes: str | None = Field(default=None, max_length=4096)
+    required_human_review: bool = False
+    escalation_path: str | None = Field(default=None, max_length=512)
+    rollback_trigger: str | None = Field(default=None, max_length=512)
+    dataset_digest: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    run_digest: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
     @model_validator(mode="after")
     def _validate_metrics_and_flags(self) -> TaskRoutingInput:
@@ -103,6 +115,11 @@ class TaskRoutingInput(_Strict):
             "candidate_latency",
             "baseline_cost",
             "candidate_cost",
+            "baseline_success_rate",
+            "candidate_success_rate",
+            "candidate_policy_pass_rate",
+            "candidate_human_acceptance_rate",
+            "candidate_business_success_rate",
         ):
             value = getattr(self, field_name)
             if value is not None and (not value.is_finite() or value < 0):
@@ -113,6 +130,16 @@ class TaskRoutingInput(_Strict):
                 raise ValueError(f"{field_name} must be zero or at least {MIN_NONZERO_METRIC_VALUE}")
             if value is not None and len(value.as_tuple().digits) > MAX_METRIC_DIGITS:
                 raise ValueError(f"{field_name} must not exceed {MAX_METRIC_DIGITS} significant digits")
+        for field_name in (
+            "baseline_success_rate",
+            "candidate_success_rate",
+            "candidate_policy_pass_rate",
+            "candidate_human_acceptance_rate",
+            "candidate_business_success_rate",
+        ):
+            value = getattr(self, field_name)
+            if value is not None and value > 1:
+                raise ValueError(f"{field_name} must be between 0 and 1")
         if any(not flag or len(flag) > 256 for flag in [*self.policy_flags, *self.failure_flags]):
             raise ValueError("policy and failure flags must be non-empty and at most 256 characters")
         return self
@@ -125,6 +152,9 @@ class RoutingThresholds(_Strict):
     max_latency_increase_pct: Decimal = DEFAULT_MAX_LATENCY_INCREASE
     min_cost_reduction_pct: Decimal = DEFAULT_MIN_COST_REDUCTION
     high_risk_requires_review: bool = True
+    minimum_sample_size: int = Field(default=DEFAULT_MINIMUM_SAMPLE_SIZE, ge=1)
+    minimum_policy_pass_rate: Decimal = Decimal("1")
+    minimum_business_success_rate: Decimal | None = None
     blocked_categories: list[str] = Field(default_factory=lambda: sorted(BLOCKED_RISK_TERMS))
 
     @model_validator(mode="after")
@@ -152,6 +182,17 @@ class TaskRoutingDecision(_Strict):
     latency_signal: Signal
     policy_notes: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    recommendation: str = "Insufficient evidence"
+    confidence_level: str = "low"
+    sample_size: int = 0
+    reliability_evidence: dict[str, str | int | None] = Field(default_factory=dict)
+    policy_evidence: dict[str, str | None] = Field(default_factory=dict)
+    human_outcome_evidence: dict[str, str | None] = Field(default_factory=dict)
+    unknown_signals: list[str] = Field(default_factory=list)
+    required_human_review: bool = False
+    escalation_path: str = "Escalate to the baseline model and workflow owner."
+    rollback_trigger: str = "Rollback on quality, policy, reliability, or business-outcome regression."
+    reproducibility_metadata: dict[str, str | None] = Field(default_factory=dict)
 
 
 class RoutingSummary(_Strict):
@@ -335,17 +376,33 @@ def decide_task_route(
         warnings.append("Quality retention is unknown.")
     if latency is None:
         warnings.append("Latency delta is unknown.")
+    if task.sample_size < thresholds.minimum_sample_size:
+        warnings.append(f"Insufficient evidence: {task.sample_size} samples; minimum is {thresholds.minimum_sample_size}.")
 
-    explicit_block = bool({"blocked", "policy blocked", "escalate", "requires escalation"} & terms)
-    regulated_block = bool(blocked_categories & terms)
-    insufficient = quality is None and latency is None and cost is None
-
-    if explicit_block or regulated_block or insufficient:
-        reason = "Task is blocked, regulated, escalated, or insufficiently evaluated."
+    def make_decision(route: RouteDecision, reason: str) -> TaskRoutingDecision:
+        unknown_signals: list[str] = []
+        for name, value in (
+            ("quality", quality),
+            ("cost", cost),
+            ("latency", latency),
+            ("reliability", task.candidate_success_rate),
+            ("policy", task.candidate_policy_pass_rate),
+            ("human_outcome", task.candidate_human_acceptance_rate),
+            ("business_outcome", task.candidate_business_success_rate),
+        ):
+            if value is None:
+                unknown_signals.append(name)
+        recommendation = {
+            RouteDecision.CANDIDATE_MODEL: "Recommended replacement",
+            RouteDecision.BASELINE_MODEL: "Not recommended",
+            RouteDecision.HUMAN_REVIEW: "Recommended with conditions",
+            RouteDecision.BLOCKED_OR_ESCALATE: "Blocked pending review",
+        }[route]
+        confidence_level = "high" if task.sample_size >= 100 else "medium" if task.sample_size >= thresholds.minimum_sample_size else "low"
         return TaskRoutingDecision(
             task_id=task.task_id,
             category=task.category,
-            route=RouteDecision.BLOCKED_OR_ESCALATE,
+            route=route,
             reason=reason,
             quality_retention_pct=quality,
             cost_reduction_pct=cost,
@@ -356,56 +413,52 @@ def decide_task_route(
             latency_signal=latency_signal,
             policy_notes=policy_notes,
             warnings=warnings,
+            recommendation=recommendation,
+            confidence_level=confidence_level,
+            sample_size=task.sample_size,
+            reliability_evidence={
+                "baseline_success_rate": None if task.baseline_success_rate is None else str(task.baseline_success_rate),
+                "candidate_success_rate": None if task.candidate_success_rate is None else str(task.candidate_success_rate),
+                "sample_size": task.sample_size,
+            },
+            policy_evidence={
+                "candidate_policy_pass_rate": None if task.candidate_policy_pass_rate is None else str(task.candidate_policy_pass_rate)
+            },
+            human_outcome_evidence={
+                "human_acceptance_rate": None
+                if task.candidate_human_acceptance_rate is None
+                else str(task.candidate_human_acceptance_rate),
+                "business_success_rate": None
+                if task.candidate_business_success_rate is None
+                else str(task.candidate_business_success_rate),
+            },
+            unknown_signals=unknown_signals,
+            required_human_review=task.required_human_review or route in {RouteDecision.HUMAN_REVIEW, RouteDecision.BLOCKED_OR_ESCALATE},
+            escalation_path=task.escalation_path or "Escalate to the baseline model and workflow owner.",
+            rollback_trigger=task.rollback_trigger or "Rollback on quality, policy, reliability, or business-outcome regression.",
+            reproducibility_metadata={"dataset_digest": task.dataset_digest, "run_digest": task.run_digest},
         )
 
+    explicit_block = bool({"blocked", "policy blocked", "escalate", "requires escalation"} & terms)
+    regulated_block = bool(blocked_categories & terms)
+    insufficient = quality is None and latency is None and cost is None
+
+    if explicit_block or regulated_block or insufficient:
+        reason = "Task is blocked, regulated, escalated, or insufficiently evaluated."
+        return make_decision(RouteDecision.BLOCKED_OR_ESCALATE, reason)
+
+    if task.candidate_policy_pass_rate is not None and task.candidate_policy_pass_rate < thresholds.minimum_policy_pass_rate:
+        route = (
+            RouteDecision.BLOCKED_OR_ESCALATE if task.risk_level in {RiskLevel.HIGH, RiskLevel.UNKNOWN} else RouteDecision.BASELINE_MODEL
+        )
+        return make_decision(route, "Candidate policy pass rate is below the configured threshold.")
+
     if quality is not None and quality < thresholds.min_quality_retention_pct:
-        return TaskRoutingDecision(
-            task_id=task.task_id,
-            category=task.category,
-            route=RouteDecision.BASELINE_MODEL,
-            reason="Quality retention is below the configured threshold.",
-            quality_retention_pct=quality,
-            cost_reduction_pct=cost,
-            latency_delta_pct=latency,
-            risk_level=task.risk_level,
-            quality_signal=quality_signal,
-            cost_signal=cost_signal,
-            latency_signal=latency_signal,
-            policy_notes=policy_notes,
-            warnings=warnings,
-        )
+        return make_decision(RouteDecision.BASELINE_MODEL, "Quality retention is below the configured threshold.")
     if task.failure_flags:
-        return TaskRoutingDecision(
-            task_id=task.task_id,
-            category=task.category,
-            route=RouteDecision.BASELINE_MODEL,
-            reason="Candidate has failure flags that make baseline routing safer.",
-            quality_retention_pct=quality,
-            cost_reduction_pct=cost,
-            latency_delta_pct=latency,
-            risk_level=task.risk_level,
-            quality_signal=quality_signal,
-            cost_signal=cost_signal,
-            latency_signal=latency_signal,
-            policy_notes=policy_notes,
-            warnings=warnings,
-        )
+        return make_decision(RouteDecision.BASELINE_MODEL, "Candidate has failure flags that make baseline routing safer.")
     if latency is not None and latency > thresholds.max_latency_increase_pct:
-        return TaskRoutingDecision(
-            task_id=task.task_id,
-            category=task.category,
-            route=RouteDecision.BASELINE_MODEL,
-            reason="Candidate latency increase exceeds the configured threshold.",
-            quality_retention_pct=quality,
-            cost_reduction_pct=cost,
-            latency_delta_pct=latency,
-            risk_level=task.risk_level,
-            quality_signal=quality_signal,
-            cost_signal=cost_signal,
-            latency_signal=latency_signal,
-            policy_notes=policy_notes,
-            warnings=warnings,
-        )
+        return make_decision(RouteDecision.BASELINE_MODEL, "Candidate latency increase exceeds the configured threshold.")
 
     borderline_quality = quality is None or quality < thresholds.min_quality_retention_pct + Decimal("10")
     weak_cost = cost is not None and cost < thresholds.min_cost_reduction_pct
@@ -417,38 +470,25 @@ def decide_task_route(
         or borderline_quality
         or weak_cost
         or (cost is None and task.risk_level is not RiskLevel.LOW)
+        or task.sample_size < thresholds.minimum_sample_size
+        or task.required_human_review
+        or (
+            thresholds.minimum_business_success_rate is not None
+            and (
+                task.candidate_business_success_rate is None
+                or task.candidate_business_success_rate < thresholds.minimum_business_success_rate
+            )
+        )
     )
     if needs_review:
-        return TaskRoutingDecision(
-            task_id=task.task_id,
-            category=task.category,
-            route=RouteDecision.HUMAN_REVIEW,
-            reason="Candidate may be usable, but risk, sensitivity, or borderline evidence requires review.",
-            quality_retention_pct=quality,
-            cost_reduction_pct=cost,
-            latency_delta_pct=latency,
-            risk_level=task.risk_level,
-            quality_signal=quality_signal,
-            cost_signal=cost_signal,
-            latency_signal=latency_signal,
-            policy_notes=policy_notes,
-            warnings=warnings,
+        return make_decision(
+            RouteDecision.HUMAN_REVIEW,
+            "Candidate may be usable, but risk, sensitivity, outcomes, or evidence strength requires review.",
         )
 
-    return TaskRoutingDecision(
-        task_id=task.task_id,
-        category=task.category,
-        route=RouteDecision.CANDIDATE_MODEL,
-        reason="Quality, risk, latency, and cost evidence support candidate routing.",
-        quality_retention_pct=quality,
-        cost_reduction_pct=cost,
-        latency_delta_pct=latency,
-        risk_level=task.risk_level,
-        quality_signal=quality_signal,
-        cost_signal=cost_signal,
-        latency_signal=latency_signal,
-        policy_notes=policy_notes,
-        warnings=warnings,
+    return make_decision(
+        RouteDecision.CANDIDATE_MODEL,
+        "Quality, reliability, policy, risk, latency, cost, and outcome evidence support candidate routing.",
     )
 
 
@@ -598,7 +638,7 @@ def build_model_routing_plan(
         baseline_model=baseline_model or str(metadata.get("baseline_model") or "baseline"),
         candidate_model=candidate_model or str(metadata.get("candidate_model") or "candidate"),
         risk_profile=normalized_risk,
-        source_path=str(input_path),
+        source_path=input_path.name,
         thresholds=selected_thresholds,
         summary=summary,
         task_decisions=decisions,
@@ -708,15 +748,16 @@ def render_model_routing_plan_markdown(plan: ModelRoutingPlan) -> str:
         "",
         "## Task Routing Table",
         "",
-        "| Task | Category | Route | Risk | Quality | Cost | Latency | Reason |",
-        "|---|---|---|---|---:|---:|---:|---|",
+        "| Task | Route | Recommendation | Confidence | Samples | Risk | Unknowns | Review |",
+        "|---|---|---|---|---:|---|---|---|",
     ]
     for decision in plan.task_decisions:
         lines.append(
             "| "
-            f"{_md(decision.task_id)} | {_md(decision.category)} | `{decision.route.value}` | {decision.risk_level.value} | "
-            f"{_fmt_decimal(decision.quality_retention_pct, '%')} | {_fmt_decimal(decision.cost_reduction_pct, '%')} | "
-            f"{_fmt_decimal(decision.latency_delta_pct, '%')} | {_md(decision.reason)} |"
+            f"{_md(decision.task_id)} | `{decision.route.value}` | {_md(decision.recommendation)} | "
+            f"{_md(decision.confidence_level)} | {decision.sample_size} | {decision.risk_level.value} | "
+            f"{_md(', '.join(decision.unknown_signals) or 'None')} | "
+            f"{'Required' if decision.required_human_review else 'Not required'} |"
         )
     lines.extend(
         [
@@ -737,7 +778,16 @@ def render_model_routing_plan_markdown(plan: ModelRoutingPlan) -> str:
     for decision in plan.task_decisions:
         if decision.policy_notes or decision.warnings or decision.route in {RouteDecision.HUMAN_REVIEW, RouteDecision.BLOCKED_OR_ESCALATE}:
             notes = "; ".join([*decision.policy_notes, *decision.warnings]) or decision.reason
-            lines.append(f"- `{_md(decision.task_id)}`: {_md(notes)}")
+            lines.extend(
+                [
+                    f"- `{_md(decision.task_id)}`: {_md(notes)}",
+                    f"  Evidence: quality {_fmt_decimal(decision.quality_retention_pct, '%')}; "
+                    f"cost {_fmt_decimal(decision.cost_reduction_pct, '%')}; "
+                    f"latency {_fmt_decimal(decision.latency_delta_pct, '%')}.",
+                    f"  Escalation: {_md(decision.escalation_path)}",
+                    f"  Rollback: {_md(decision.rollback_trigger)}",
+                ]
+            )
     lines.extend(
         [
             "",

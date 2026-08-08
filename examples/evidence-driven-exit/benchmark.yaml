@@ -1,0 +1,21 @@
+name: evidence-driven-customer-support
+version: "1.0"
+description: Offline model-replacement fixture with deterministic providers.
+baseline_model: baseline
+models:
+  - alias: baseline
+    provider: deterministic
+    model: baseline-fixture
+    deployment: test
+    metadata: {strategy: oracle, latency_ms: 20}
+  - alias: candidate
+    provider: deterministic
+    model: candidate-fixture
+    deployment: local
+    metadata: {strategy: oracle, latency_ms: 8}
+cases:
+  - id: support-routing
+    input: {message: "Classify this example-only support request."}
+    expected: {category: account_help, escalation_required: false}
+evaluators: [json_parse, field_match]
+privacy: {allow_hosted_providers: false}

@@ -8,7 +8,30 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.1.0a6] - 2026-08-06
+## [0.1.0a7] - 2026-08-08
+
+### Added
+- Strict local JSON/JSONL private datasets with deterministic digests, splits,
+  bounded loading, duplicate detection, and redaction.
+- Baseline-versus-candidate CI gates with JSON, Markdown, GitHub summary, JUnit
+  XML, and stable exit-code outputs.
+- Deterministic confidence intervals, distributions, paired comparisons, and
+  explicit insufficient-evidence results.
+- Pseudonymous human outcomes, complete tool-workflow evaluation, sanitized
+  trace replay, OpenTelemetry-compatible JSONL, and privacy preflights.
+- Evidence-rich risk-aware routes and a readable static HTML decision report.
+
+### Security
+- Reject remote dataset URLs, duplicate JSON keys, oversized inputs, path
+  aliases, and symbolic-link artifact inputs or outputs.
+- Block hosted execution by default and disclose whether content can leave the
+  machine.
+
+### Changed
+- Require at least 20 cases before aggregated replacement evidence is treated
+  as sufficient by default.
+
+## [0.1.0a7] - 2026-08-06
 
 ### Maintenance
 - Publish corrected Apache-2.0 package metadata under the public maintainer identity `sekacorn`.
