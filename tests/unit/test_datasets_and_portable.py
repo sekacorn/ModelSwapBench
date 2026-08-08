@@ -104,9 +104,11 @@ def test_bounded_and_symlink_safe_file_helpers(tmp_path: Path) -> None:
     with pytest.raises(SecurityError, match="overwrite"):
         ensure_distinct_paths(source, source)
 
+    link_target = tmp_path / "link-target.json"
+    link_target.write_text("{}", encoding="utf-8")
     link = tmp_path / "link.json"
     try:
-        link.symlink_to(source)
+        link.symlink_to(link_target)
     except OSError:
         pytest.skip("symbolic links are unavailable")
     with pytest.raises(SecurityError, match="symbolic-link"):
