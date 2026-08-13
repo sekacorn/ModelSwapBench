@@ -16,6 +16,8 @@ class CostConstraintEvaluator(Evaluator):
         max_usd = self.options.get("max_usd")
         if max_usd is None:
             return self._skip("no cost budget configured")
+        if ctx.cost_usd is None:
+            return self._skip("estimated cost is unknown; cannot evaluate budget")
         passed = ctx.cost_usd <= float(max_usd)
         return self._result(
             passed=passed,

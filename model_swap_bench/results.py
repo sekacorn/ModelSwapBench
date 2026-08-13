@@ -102,7 +102,11 @@ class CaseResult(BaseModel):
     parsed_output: Any | None = None
     latency_ms: float = 0.0
     tokens: TokenUsage = Field(default_factory=TokenUsage)
-    estimated_cost_usd: float = 0.0
+    #: Estimated cost of the call. ``None`` means the cost is *unknown* (e.g. a
+    #: hosted model with no configured pricing) — distinct from a known ``0.0``
+    #: for a genuinely free local/offline call. Unknown cost is never treated as
+    #: zero downstream.
+    estimated_cost_usd: float | None = None
     evaluations: list[EvaluationResult] = Field(default_factory=list)
     policy_events: list[PolicyEvent] = Field(default_factory=list)
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
@@ -141,14 +145,22 @@ class ModelSummary(BaseModel):
     timeout_cases: int = 0
     success_rate: float = 0.0
     quality_score: float = 0.0
-    valid_json_rate: float = 0.0
-    policy_pass_rate: float = 0.0
+    #: Fraction of JSON-required cases (those with a ``json_parse``/``json_schema``
+    #: evaluator) that produced parseable JSON. ``None`` when no case required JSON
+    #: (not applicable / not evaluated) — never silently 1.0.
+    valid_json_rate: float | None = None
+    #: Fraction of policy-evaluated cases that passed. ``None`` when no policy
+    #: evidence was collected (not evaluated) — never silently 1.0.
+    policy_pass_rate: float | None = None
     tool_accuracy: float | None = None
     avg_latency_ms: float = 0.0
     median_latency_ms: float = 0.0
     p90_latency_ms: float = 0.0
     p95_latency_ms: float = 0.0
-    total_cost_usd: float = 0.0
+    #: Total estimated cost across executed cases. ``None`` means cost is unknown
+    #: (at least one executed case has unknown cost, or none were executed) —
+    #: distinct from a known ``0.0`` for a genuinely free local run.
+    total_cost_usd: float | None = None
     cost_per_success_usd: float | None = None
     timeout_rate: float = 0.0
     retry_rate: float = 0.0
@@ -196,7 +208,7 @@ class CascadeSummary(BaseModel):
     escalation_rate: float
     first_stage_success_rate: float
     final_success_rate: float
-    total_cost_usd: float
+    total_cost_usd: float | None
     cost_per_success_usd: float | None
 
 

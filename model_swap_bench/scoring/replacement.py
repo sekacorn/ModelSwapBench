@@ -19,12 +19,17 @@ INSUFFICIENT_EVIDENCE = "insufficient evidence"
 
 
 def _cost_reduction_ratio(baseline: ModelSummary, candidate: ModelSummary) -> float | None:
-    """Fractional cost reduction using cost-per-success, falling back to total cost."""
+    """Fractional cost reduction using cost-per-success, falling back to total cost.
+
+    Returns ``None`` whenever the needed cost evidence is unknown — missing cost is
+    never treated as zero, so an unpriced candidate can never look "100% cheaper".
+    """
     b_cps, c_cps = baseline.cost_per_success_usd, candidate.cost_per_success_usd
     if b_cps is not None and c_cps is not None and b_cps > 0:
         return (b_cps - c_cps) / b_cps
-    if baseline.total_cost_usd > 0:
-        return (baseline.total_cost_usd - candidate.total_cost_usd) / baseline.total_cost_usd
+    b_total, c_total = baseline.total_cost_usd, candidate.total_cost_usd
+    if b_total is not None and c_total is not None and b_total > 0:
+        return (b_total - c_total) / b_total
     return None
 
 
@@ -48,7 +53,10 @@ def decide_replacement(
     )
     latency_delta = candidate.avg_latency_ms - baseline.avg_latency_ms
     reliability_delta = candidate.success_rate - baseline.success_rate
-    policy_pass = candidate.policy_pass_rate >= 1.0
+    # No policy evidence must never be read as a pass. policy_pass is True only when
+    # policy was actually evaluated and every policy case passed.
+    policy_evaluated = candidate.policy_pass_rate is not None
+    policy_pass = policy_evaluated and candidate.policy_pass_rate is not None and candidate.policy_pass_rate >= 1.0
     deployment_compatible = (not candidate_model.is_hosted) or privacy_allows_hosted
 
     failed: list[str] = []
@@ -68,8 +76,12 @@ def decide_replacement(
         failed.append(f"success rate {candidate.success_rate:.2f} < required {config.minimum_reliability:.2f}")
     if config.maximum_latency_ms is not None and candidate.p95_latency_ms > config.maximum_latency_ms:
         failed.append(f"p95 latency {candidate.p95_latency_ms:.0f}ms > allowed {config.maximum_latency_ms:.0f}ms")
-    if not policy_pass:
+    # Only a *measured* policy violation is a hard failure. Absent policy evidence is
+    # not a failure and not a pass — it becomes a condition on the recommendation below.
+    if policy_evaluated and not policy_pass and candidate.policy_pass_rate is not None:
         failed.append(f"policy pass rate {candidate.policy_pass_rate:.2f} < 1.0")
+    if not policy_evaluated:
+        risks.append("no policy evidence was collected; policy compliance was not demonstrated")
     if not deployment_compatible:
         failed.append("candidate is a hosted provider but hosted providers are not permitted")
     for c in candidate_constraints:
@@ -77,9 +89,17 @@ def decide_replacement(
             failed.append(f"constraint {c.name} failed (actual={c.actual}, threshold={c.threshold})")
 
     cost_ok = cost_ratio is not None and cost_ratio >= config.minimum_cost_reduction
+    cost_unknown = candidate.total_cost_usd is None or baseline.total_cost_usd is None
     if cost_ratio is None:
-        risks.append("no cost signal (all-local/zero-cost run); cost reduction cannot be quantified")
-        evidence.append("cost reduction not quantifiable (zero-cost run)")
+        if cost_unknown:
+            risks.append(
+                "cost is unknown (no pricing provided for baseline or candidate); missing cost was not "
+                "treated as zero and cost reduction cannot be quantified"
+            )
+            evidence.append("cost reduction not quantifiable (cost unknown)")
+        else:
+            risks.append("no cost signal (all-local/zero-cost run); cost reduction cannot be quantified")
+            evidence.append("cost reduction not quantifiable (zero-cost run)")
     else:
         evidence.append(f"{cost_ratio * 100:.0f}% cost reduction vs baseline")
 
@@ -108,10 +128,15 @@ def decide_replacement(
             recommendation = FIRST_STAGE_WITH_ESCALATION
         else:
             recommendation = NOT_RECOMMENDED
-    elif not cost_ok:
+    elif not cost_ok or not policy_evaluated:
+        # Quality/reliability gates pass, but cost savings and/or policy compliance
+        # were not demonstrated — recommend only with those conditions attached.
         eligible = True
         recommendation = RECOMMENDED_WITH_CONDITIONS
-        risks.append("quality/reliability acceptable but target cost reduction not demonstrated")
+        if not cost_ok:
+            risks.append("quality/reliability acceptable but target cost reduction not demonstrated")
+        if not policy_evaluated:
+            risks.append("require policy evidence before migrating this workload")
     else:
         eligible = True
         recommendation = RECOMMENDED

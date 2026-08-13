@@ -33,7 +33,14 @@ def build_model_summary(
     executed = [r for r in results if r.status in (CaseStatus.SUCCESS, CaseStatus.FAILED)]
 
     latencies = [r.latency_ms for r in executed]
-    total_cost = sum(r.estimated_cost_usd for r in results)
+    # Cost of the executed calls. Unknown (``None``) propagates: if any executed
+    # case has unknown cost, or none executed, the total is unknown — never 0.
+    executed_costs = [r.estimated_cost_usd for r in executed]
+    total_cost: float | None
+    if not executed_costs or any(cost is None for cost in executed_costs):
+        total_cost = None
+    else:
+        total_cost = sum(cost for cost in executed_costs if cost is not None)
 
     json_cases = [r for r in executed if _has_eval(r, "json_parse") or _has_eval(r, "json_schema")]
     valid_json = [r for r in json_cases if r.valid_json]
@@ -59,8 +66,8 @@ def build_model_summary(
         timeout_cases=len(timed_out),
         success_rate=metrics.rate(len(successful), total),
         quality_score=quality,
-        valid_json_rate=metrics.rate(len(valid_json), len(json_cases)) if json_cases else 1.0,
-        policy_pass_rate=metrics.rate(len(policy_pass), len(policy_cases)) if policy_cases else 1.0,
+        valid_json_rate=metrics.rate(len(valid_json), len(json_cases)) if json_cases else None,
+        policy_pass_rate=metrics.rate(len(policy_pass), len(policy_cases)) if policy_cases else None,
         tool_accuracy=metrics.rate(len(tool_pass), len(tool_cases)) if tool_cases else None,
         avg_latency_ms=metrics.mean(latencies),
         median_latency_ms=metrics.median(latencies),
@@ -101,11 +108,15 @@ def check_constraints(summary: ModelSummary, constraints: Constraints) -> list[C
         detail = "" if cps is not None else "no successful cases"
         add("maximum_cost_per_success_usd", ok, constraints.maximum_cost_per_success_usd, cps, detail)
     if constraints.require_valid_json_rate is not None:
-        ok = summary.valid_json_rate >= constraints.require_valid_json_rate
-        add("require_valid_json_rate", ok, constraints.require_valid_json_rate, round(summary.valid_json_rate, 4), "")
+        rate = summary.valid_json_rate
+        ok = rate is not None and rate >= constraints.require_valid_json_rate
+        detail = "" if rate is not None else "no JSON-required cases were evaluated"
+        add("require_valid_json_rate", ok, constraints.require_valid_json_rate, None if rate is None else round(rate, 4), detail)
     if constraints.require_policy_pass:
-        ok = summary.policy_pass_rate >= 1.0
-        add("require_policy_pass", ok, True, round(summary.policy_pass_rate, 4), "")
+        rate = summary.policy_pass_rate
+        ok = rate is not None and rate >= 1.0
+        detail = "" if rate is not None else "no policy evidence was collected"
+        add("require_policy_pass", ok, True, None if rate is None else round(rate, 4), detail)
     if constraints.minimum_tool_accuracy is not None and summary.tool_accuracy is not None:
         ok = summary.tool_accuracy >= constraints.minimum_tool_accuracy
         add("minimum_tool_accuracy", ok, constraints.minimum_tool_accuracy, round(summary.tool_accuracy, 4), "")

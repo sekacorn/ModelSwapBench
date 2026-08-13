@@ -64,12 +64,12 @@ async def run_cascade(runner: BenchmarkRunner, ctx: ExecutionContext, run: Bench
     first_success = 0
     final_success = 0
     escalated = 0
-    total_cost = 0.0
+    total_cost: float | None = 0.0
     try:
         for case in runner.suite.cases:
             first_result = await run_case(ctx, first, first_provider, case)
             run.case_results.append(first_result)
-            total_cost += first_result.estimated_cost_usd
+            total_cost = economics.add_optional_costs(total_cost, first_result.estimated_cost_usd)
             if first_result.status is CaseStatus.SUCCESS:
                 first_success += 1
 
@@ -86,7 +86,7 @@ async def run_cascade(runner: BenchmarkRunner, ctx: ExecutionContext, run: Bench
                 escal_result = await run_case(ctx, escal, escal_provider, case)
                 escal_result.escalated = True
                 run.case_results.append(escal_result)
-                total_cost += escal_result.estimated_cost_usd
+                total_cost = economics.add_optional_costs(total_cost, escal_result.estimated_cost_usd)
                 final_ok = escal_result.status is CaseStatus.SUCCESS
             else:
                 final_ok = first_result.status is CaseStatus.SUCCESS

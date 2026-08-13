@@ -8,6 +8,31 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed (evidence-integrity hardening)
+- Unknown cost is now represented explicitly and never treated as zero. Model
+  pricing (`estimated_input_cost_per_million` / `estimated_output_cost_per_million`)
+  and the derived `CaseResult.estimated_cost_usd` / `ModelSummary.total_cost_usd`
+  are now optional: a hosted, per-token-billed model with no declared pricing
+  yields an unknown cost (`null`), while a genuinely free local/offline model
+  still yields a known `0`. Cost-reduction is `null` whenever baseline or
+  candidate cost is unknown — a candidate can no longer appear "100% cheaper" or
+  earn an unconditional recommendation because pricing was missing. This also
+  fixes the run → AI Vendor Exit Report bridge.
+- `ModelSummary.policy_pass_rate` and `valid_json_rate` are now optional and are
+  `null` when no policy / JSON-required cases were evaluated (previously `1.0`),
+  matching the existing `tool_accuracy` semantics. The replacement decision no
+  longer reports a policy pass with zero policy evidence and routes such runs to
+  "recommended with conditions"; reports render unevaluated metrics as `n/a`.
+- Release workflow pins `pypa/gh-action-pypi-publish` to `v1.14.2`
+  (`dc37677b2e1c63e2034f94d8a5b11f265b73ba33`) for Twine 7 / Core Metadata 2.5
+  compatibility. Trusted Publishing (GitHub OIDC, `pypi` environment,
+  `id-token: write`) is unchanged; no API token is used.
+
+Compatibility: fully specified inputs are unaffected — priced comparisons,
+explicit zero-cost local models, policy-evaluated runs, `tool_accuracy`, and the
+gate/route-plan/outcome paths behave as before. The only tightening is that
+previously misrepresented missing evidence now remains missing.
+
 ## [0.1.0a7] - 2026-08-08
 
 ### Added

@@ -499,14 +499,28 @@
           "title": "Api Key Env"
         },
         "estimated_input_cost_per_million": {
-          "default": 0.0,
-          "title": "Estimated Input Cost Per Million",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimated Input Cost Per Million"
         },
         "estimated_output_cost_per_million": {
-          "default": 0.0,
-          "title": "Estimated Output Cost Per Million",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimated Output Cost Per Million"
         },
         "context_limit": {
           "anyOf": [

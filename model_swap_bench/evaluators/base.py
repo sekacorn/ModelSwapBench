@@ -24,7 +24,8 @@ class EvalContext:
     case: BenchmarkCase
     output_text: str
     latency_ms: float = 0.0
-    cost_usd: float = 0.0
+    #: ``None`` when the call's cost is unknown (e.g. hosted model without pricing).
+    cost_usd: float | None = None
     tool_calls: list[ToolCallRecord] = field(default_factory=list)
     policy_events: list[PolicyEvent] = field(default_factory=list)
     parsed: Any | None = None

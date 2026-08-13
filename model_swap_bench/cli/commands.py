@@ -401,7 +401,7 @@ def compare(run_ref: str, *, root: Path | None) -> ExitCode:
             s.model_alias,
             f"{s.success_rate * 100:.0f}%",
             f"{s.quality_score:.2f}",
-            f"{s.valid_json_rate * 100:.0f}%",
+            "n/a" if s.valid_json_rate is None else f"{s.valid_json_rate * 100:.0f}%",
             f"{s.p95_latency_ms:.0f}ms",
             "n/a" if s.cost_per_success_usd is None else f"${s.cost_per_success_usd:.6f}",
         )

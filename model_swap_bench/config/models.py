@@ -122,8 +122,12 @@ class ModelCandidate(_Strict):
         default=None,
         description="Name of the environment variable holding the API key (never the key itself).",
     )
-    estimated_input_cost_per_million: float = 0.0
-    estimated_output_cost_per_million: float = 0.0
+    #: Per-million token prices. ``None`` (the default) means pricing was not
+    #: declared: for a hosted/per-token-billed provider the resulting cost is
+    #: *unknown*, while a genuinely free local model yields a known ``0.0``. Set an
+    #: explicit ``0`` to declare a model free regardless of provider.
+    estimated_input_cost_per_million: float | None = None
+    estimated_output_cost_per_million: float | None = None
     context_limit: int | None = None
     timeout_seconds: float | None = None
     retries: int | None = None

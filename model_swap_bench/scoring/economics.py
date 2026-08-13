@@ -18,11 +18,18 @@ from model_swap_bench.config.models import CostMode, ModelCandidate, ScoringConf
 _MS_PER_HOUR = 3_600_000.0
 
 
-def token_cost(candidate: ModelCandidate, input_tokens: int, output_tokens: int) -> float:
-    """Token-based marginal cost in USD from the candidate's per-million prices."""
-    return (input_tokens / 1_000_000.0) * candidate.estimated_input_cost_per_million + (
-        output_tokens / 1_000_000.0
-    ) * candidate.estimated_output_cost_per_million
+def token_cost(candidate: ModelCandidate, input_tokens: int, output_tokens: int) -> float | None:
+    """Token-based marginal cost in USD from the candidate's per-million prices.
+
+    Returns ``None`` when the candidate declares *no* token pricing (both prices
+    unset). A candidate that explicitly declares a price of ``0`` is treated as a
+    known zero — only *absent* pricing is unknown.
+    """
+    input_price = candidate.estimated_input_cost_per_million
+    output_price = candidate.estimated_output_cost_per_million
+    if input_price is None and output_price is None:
+        return None
+    return (input_tokens / 1_000_000.0) * (input_price or 0.0) + (output_tokens / 1_000_000.0) * (output_price or 0.0)
 
 
 def compute_cost(scoring: ScoringConfig, latency_ms: float) -> float:
@@ -45,13 +52,35 @@ def estimate_call_cost(
     input_tokens: int,
     output_tokens: int,
     latency_ms: float,
-) -> float:
-    """Total estimated cost for one model call under the active cost mode."""
-    return token_cost(candidate, input_tokens, output_tokens) + compute_cost(scoring, latency_ms)
+) -> float | None:
+    """Total estimated cost for one model call under the active cost mode.
+
+    Returns ``None`` when the cost is genuinely *unknown*: a per-token-billed
+    (hosted) provider with no configured pricing and no compute-cost estimate.
+    Local/self-hosted inference has no marginal per-token vendor charge, so absent
+    pricing there is a known ``0.0`` rather than unknown.
+    """
+    tokens = token_cost(candidate, input_tokens, output_tokens)
+    compute = compute_cost(scoring, latency_ms)
+    if tokens is None:
+        # No per-token pricing was declared.
+        if candidate.is_hosted:
+            # Hosted APIs bill per token; absent pricing means unknown, not free.
+            return None
+        # Local/self-hosted: no marginal per-token charge -> known zero (+ any compute).
+        return compute
+    return tokens + compute
 
 
-def cost_per_success(total_cost_usd: float, successful_cases: int) -> float | None:
-    """Primary economic metric. Returns ``None`` when there are no successes (undefined)."""
-    if successful_cases <= 0:
+def add_optional_costs(left: float | None, right: float | None) -> float | None:
+    """Sum two possibly-unknown costs. Unknown (``None``) propagates."""
+    if left is None or right is None:
+        return None
+    return left + right
+
+
+def cost_per_success(total_cost_usd: float | None, successful_cases: int) -> float | None:
+    """Primary economic metric. ``None`` when cost is unknown or there are no successes."""
+    if total_cost_usd is None or successful_cases <= 0:
         return None
     return total_cost_usd / successful_cases
