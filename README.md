@@ -6,7 +6,9 @@ Run the same workflow across local, open-weight, self-hosted, and hosted models.
 Measure quality, latency, policy compliance, and **cost per successful outcome**
 before you commit to a vendor.
 
-> Status: **0.1.0a7 alpha** - usable and fully offline-capable. APIs may change before 1.0.
+> Status: **0.1.0b1 beta** - usable and fully offline-capable, with hardened evidence
+> semantics (unknown evidence is never treated as zero or as a pass). Beta does not mean
+> production-certified or universally safe; APIs may still change before 1.0.
 
 ModelSwapBench evaluates whether another model can replace an existing model
 for a real workflow while preserving quality, reliability, policy compliance,
@@ -315,7 +317,7 @@ run is identical.
 
 ## Roadmap
 
-**Current alpha:** deterministic, Ollama, Forge, and OpenAI-compatible providers;
+**Current beta:** deterministic, Ollama, Forge, and OpenAI-compatible providers;
 YAML benchmark suites; strict private JSON/JSONL datasets; deterministic evaluators;
 cost, latency, reliability, statistical, and human-outcome evidence; CI regression
 gates; multi-turn/tool workflow evaluation; sanitized trace replay; portable

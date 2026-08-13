@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "modelswapbench"
-version = "0.1.0a7"
+version = "0.1.0b1"
 description = "Open-source model portability and replacement benchmark: measure which model delivers an acceptable outcome at the lowest cost, latency, and operational risk."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 license = "Apache-2.0"
 authors = [{ name = "sekacorn" }]
 maintainers = [{ name = "sekacorn" }]
@@ -16,7 +16,7 @@ keywords = [
   "cost", "replacement", "portability", "provider-neutral", "devsecops",
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Intended Audience :: Information Technology",
   "Intended Audience :: System Administrators",

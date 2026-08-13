@@ -8,6 +8,14 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0b1] - 2026-08-13
+
+First Beta. Beta here means the evidence semantics have been hardened so that
+unknown or insufficient evidence can no longer masquerade as a favorable result.
+It does **not** mean the tool is production-certified, universally safe,
+compliance-certified, statistically conclusive, invoice-accurate, or vendor-
+independent under every workload.
+
 ### Changed (evidence-integrity hardening)
 - Unknown cost is now represented explicitly and never treated as zero. Model
   pricing (`estimated_input_cost_per_million` / `estimated_output_cost_per_million`)

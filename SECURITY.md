@@ -28,4 +28,4 @@ See [THREAT_MODEL.md](THREAT_MODEL.md) for the full analysis.
 
 ## Supported versions
 
-v0.1.x (alpha) receives security fixes on a best-effort basis.
+v0.1.x (beta) receives security fixes on a best-effort basis.
