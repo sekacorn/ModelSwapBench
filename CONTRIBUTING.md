@@ -15,6 +15,8 @@ make quality      # lint + typecheck + test + security
 
 - **Tests must pass offline** — no paid APIs, internet, Ollama, Docker, or GPU
   required for the default suite. Use the deterministic provider.
+- Optional Ollama integration tests contact localhost only when run with
+  `MODELSWAPBENCH_RUN_OLLAMA_INTEGRATION=1 pytest -m integration`.
 - **Typed and linted**: `ruff` clean, `mypy --strict` clean.
 - **≥ 80% meaningful coverage** — no superficial tests to pad the number.
 - **No incompatible source code** may be copied in. All original code is Apache-2.0 licensed.
