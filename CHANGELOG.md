@@ -8,6 +8,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- Ollama integration tests no longer probe localhost while pytest imports or
+  collects the module. Live contact requires the explicit
+  `MODELSWAPBENCH_RUN_OLLAMA_INTEGRATION=1` opt-in and occurs during test setup.
+
 ## [0.1.0b1] - 2026-08-13
 
 First Beta. Beta here means the evidence semantics have been hardened so that
