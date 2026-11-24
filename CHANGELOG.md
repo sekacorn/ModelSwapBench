@@ -8,6 +8,14 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0b4] - 2026-11-24
+
+A security release. **If you ever put credentials in a model's `base_url`,
+rotate them and scrub your stored runs and logs**: every earlier version wrote
+that URL, password included, to disk and to the INFO log. Details under
+Security. Configurations that supply keys through `api_key_env`, the
+documented method, are unaffected and need no change.
+
 ### Security
 - **A `base_url` containing credentials was written to every run artefact and
   to the logs. Affects every published version, 0.1.0a1 through 0.1.0b3.** A
