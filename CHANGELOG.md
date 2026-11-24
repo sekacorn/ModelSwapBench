@@ -8,6 +8,27 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Security
+- **A `base_url` containing credentials was written to every run artefact and
+  to the logs. Affects every published version, 0.1.0a1 through 0.1.0b3.** A
+  model configured with a URL such as `https://user:password@host/v1` was
+  accepted and used as given. The endpoint is recorded verbatim in the run's
+  `manifest.json`, `run.json`, `results.jsonl` and `suite.json`, and the HTTP
+  client logs each request URL at INFO, so the password was stored on disk in
+  `.modelswapbench/runs/` and written to any log that captured INFO. When an
+  endpoint could not be reached, the error recorded for each case repeated it
+  too.
+
+  Such a URL is now refused when the suite loads, with an error that names the
+  field and never repeats the URL. Providers check again before sending, for a
+  candidate built without validation. Configuration errors no longer copy any
+  rejected input into the exception, so a traceback cannot show it either.
+  Supply a key through `api_key_env` instead.
+
+  **If you ran any earlier version with credentials in a `base_url`, treat
+  them as exposed and rotate them,** and delete or scrub the affected runs
+  under `.modelswapbench/runs/` and any logs that captured INFO output.
+
 ## [0.1.0b3] - 2026-11-24
 
 A correctness fix for cost and hosting classification. **If you compared a

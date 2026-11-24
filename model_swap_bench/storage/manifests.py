@@ -71,7 +71,7 @@ def build_manifest(suite: BenchmarkSuite, run_id: str, suite_dir: Path | None = 
                 "provider": m.provider.value,
                 "model": m.model,
                 "deployment": m.deployment.value,
-                "endpoint": m.base_url,  # never contains a secret
+                "endpoint": m.base_url,  # credentials are refused when the suite loads
             }
             for m in suite.models
         ],
