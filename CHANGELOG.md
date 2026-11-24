@@ -8,6 +8,38 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+Planned for 0.1.0b3.
+
+### Fixed
+- **Hosted `openai_compatible` endpoints were classified as local, and their
+  cost reported as `0.0` instead of unknown.** In 0.1.0b2, an
+  `openai_compatible` model pointed at a hosted endpoint with no declared
+  pricing was classified as local, because `deployment` defaults to `local`
+  and the provider kind is not in the fixed set of hosted providers. Its cost
+  was therefore reported as `0.0` (free) rather than `None` (unknown).
+  Replacement scoring treated the same model as deployment-compatible, and
+  `msb models` listed it as `local`.
+
+  **Execution was never affected**: the provider classified the endpoint
+  itself, and `--allow-hosted` still gated every run against an external one.
+
+  **Impact: re-run any comparison that used a hosted `openai_compatible`
+  endpoint without declared pricing.** Its cost figures, and any ranking or
+  replacement verdict that depended on them, were computed against a zero
+  that should have been unknown.
+
+  Hosting is now derived from the endpoint, by one rule in
+  `model_swap_bench.endpoints` that both the configuration and provider
+  layers call, so the two can no longer disagree.
+
+### Changed
+- A `deployment` declaration can now only **add** hosted-ness. A public
+  endpoint is hosted regardless of what `deployment` says, including
+  `self_hosted`: whoever owns the server, the content still left the machine.
+  Loopback and private-network endpoints are unaffected, declaring `hosted`
+  for a local endpoint is still honoured, and a remote `ollama` endpoint is
+  now classified as hosted for the same reason.
+
 ## [0.1.0b2] - 2026-11-21
 
 ### Fixed

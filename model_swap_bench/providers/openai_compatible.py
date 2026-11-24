@@ -8,13 +8,12 @@ suite) and are never written to results or reports.
 
 from __future__ import annotations
 
-import ipaddress
 import os
-from urllib.parse import urlparse
 
 import httpx
 
 from model_swap_bench.config.models import ModelCandidate, ProviderKind
+from model_swap_bench.endpoints import endpoint_is_local
 from model_swap_bench.errors import (
     ConfigError,
     ProviderResponseError,
@@ -23,19 +22,10 @@ from model_swap_bench.errors import (
 )
 from model_swap_bench.providers.base import HealthStatus, Provider, ProviderRequest, ProviderResponse
 
-# 0.0.0.0 is accepted as a local client endpoint for development servers.
-_LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}  # nosec B104
-
-
-def endpoint_is_local(base_url: str) -> bool:
-    """Classify an endpoint as local (loopback / private network) or external."""
-    host = urlparse(base_url).hostname or ""
-    if host in _LOCAL_HOSTNAMES:
-        return True
-    try:
-        return ipaddress.ip_address(host).is_private
-    except ValueError:
-        return False
+__all__ = ["OpenAICompatibleProvider", "endpoint_is_local"]
+# endpoint_is_local moved to model_swap_bench.endpoints so the configuration
+# layer can use the same rule. Re-exported here because it was importable from
+# this module and removing that would break a caller for no gain.
 
 
 class OpenAICompatibleProvider(Provider):
