@@ -12,7 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from model_swap_bench.endpoints import endpoint_is_local
+from model_swap_bench.endpoints import URL_CREDENTIALS_MESSAGE, endpoint_is_local, url_has_credentials
 
 
 class ProviderKind(str, Enum):
@@ -76,9 +76,15 @@ class CascadeCondition(str, Enum):
 
 
 class _Strict(BaseModel):
-    """Base model that rejects unknown keys to catch benchmark-file typos."""
+    """Base model that rejects unknown keys to catch benchmark-file typos.
 
-    model_config = ConfigDict(extra="forbid")
+    Errors never repeat the rejected input. A refused base_url may carry a
+    password, and pydantic would otherwise copy the value into the error and
+    so into any traceback that renders the cause chain. The loader reports the
+    field path and the reason, which is what fixing the file needs.
+    """
+
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
 
 
 class EvaluatorSpec(_Strict):
@@ -144,6 +150,13 @@ class ModelCandidate(_Strict):
     seed: int | None = None
     fixture: str | None = Field(default=None, description="Deterministic-provider fixture id.")
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("base_url")
+    @classmethod
+    def _refuse_credentials_in_base_url(cls, value: str | None) -> str | None:
+        if value is not None and url_has_credentials(value):
+            raise ValueError(URL_CREDENTIALS_MESSAGE)
+        return value
 
     @property
     def is_hosted(self) -> bool:

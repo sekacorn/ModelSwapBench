@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import ipaddress
 from typing import Final
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit
 
 #: 0.0.0.0 is accepted because development servers bind it to mean "this host".
 LOCAL_HOSTNAMES: Final = frozenset({"localhost", "127.0.0.1", "::1", "0.0.0.0"})  # nosec B104
@@ -41,3 +41,25 @@ def endpoint_is_local(base_url: str) -> bool:
         # and a name that resolves privately today may not tomorrow.
         return False
     return bool(address.is_private or address.is_loopback or address.is_link_local)
+
+
+#: Raised verbatim. It says how to fix the problem and never repeats the URL.
+URL_CREDENTIALS_MESSAGE: Final = (
+    "base_url must not contain credentials (user:password@host). Remove them from the URL and supply the key through api_key_env."
+)
+
+
+def url_has_credentials(base_url: str) -> bool:
+    """Whether ``base_url`` carries a username or password.
+
+    Such a URL is refused rather than used. Run artefacts record each model's
+    endpoint, and HTTP clients log the request URL, so a password placed in the
+    URL would be written to every manifest, result file and log. A URL that
+    cannot be parsed is judged by whether its authority contains ``@``.
+    """
+    try:
+        parts = urlsplit(base_url)
+        return parts.username is not None or parts.password is not None
+    except ValueError:
+        authority = base_url.split("//", 1)[-1].split("/", 1)[0]
+        return "@" in authority

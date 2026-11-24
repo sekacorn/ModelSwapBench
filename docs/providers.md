@@ -40,6 +40,9 @@ call. v0.1 exercises Forge's provider layer, not full agent orchestration (roadm
 For vLLM, llama.cpp servers, LM Studio-compatible services, and local gateways.
 
 - Requires `base_url`. Classifies the endpoint as **local** or **external**.
+- `base_url` must not contain credentials (`user:password@host`): such a URL
+  is refused when the suite loads, because run artefacts record the endpoint
+  and HTTP clients log it. Use `api_key_env`.
 - External endpoints require `--allow-hosted` (data would leave the machine).
 - API key read from `api_key_env`; never written to results/reports.
 
