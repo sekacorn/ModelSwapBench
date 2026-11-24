@@ -8,11 +8,18 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Planned for 0.1.0b3.
+## [0.1.0b3] - 2026-11-24
+
+A correctness fix for cost and hosting classification. **If you compared a
+hosted `openai_compatible` endpoint with no declared pricing on 0.1.0b1 or
+0.1.0b2, re-run that comparison**: its cost was reported as `0.0` (free)
+instead of unknown, and any ranking or replacement verdict that depended on
+cost was computed against that zero. Details under Fixed. No model was ever
+run against a hosted endpoint without `--allow-hosted`.
 
 ### Fixed
 - **Hosted `openai_compatible` endpoints were classified as local, and their
-  cost reported as `0.0` instead of unknown.** In 0.1.0b2, an
+  cost reported as `0.0` instead of unknown.** In 0.1.0b1 and 0.1.0b2, an
   `openai_compatible` model pointed at a hosted endpoint with no declared
   pricing was classified as local, because `deployment` defaults to `local`
   and the provider kind is not in the fixed set of hosted providers. Its cost
