@@ -12,6 +12,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from model_swap_bench.endpoints import endpoint_is_local
+
 
 class ProviderKind(str, Enum):
     """Supported provider backends."""
@@ -27,6 +29,13 @@ class ProviderKind(str, Enum):
 
 #: Providers that may transmit benchmark data off the local machine.
 HOSTED_PROVIDERS: frozenset[ProviderKind] = frozenset({ProviderKind.OPENAI, ProviderKind.ANTHROPIC, ProviderKind.BEDROCK})
+"""Providers that are hosted by construction, having no endpoint to inspect.
+
+A provider kind alone cannot answer the question for the rest: an
+``openai_compatible`` candidate is hosted or local depending entirely on where
+its ``base_url`` points, which is why :meth:`ModelCandidate.is_hosted` prefers
+the endpoint over this set.
+"""
 
 
 class DeploymentType(str, Enum):
@@ -138,7 +147,25 @@ class ModelCandidate(_Strict):
 
     @property
     def is_hosted(self) -> bool:
-        return self.provider in HOSTED_PROVIDERS or self.deployment is DeploymentType.HOSTED
+        """Whether running this candidate sends content off the machine.
+
+        Derived from the endpoint wherever there is one, because an enum of
+        provider kinds cannot answer it. An ``openai_compatible`` candidate
+        pointed at a vendor's URL is hosted whatever ``deployment`` says, and
+        before this was derived it reported as local: the default for
+        ``deployment`` is ``LOCAL`` and ``openai_compatible`` is not in
+        :data:`HOSTED_PROVIDERS`, so a per-token-billed vendor with no declared
+        pricing was costed as free rather than unknown.
+
+        A declaration can only *add* hosted-ness, never remove it. Declaring
+        ``self_hosted`` for a public endpoint does not keep the content home:
+        whoever owns the server, it still left this machine.
+        """
+        if self.deployment is DeploymentType.HOSTED:
+            return True
+        if self.base_url:
+            return not endpoint_is_local(self.base_url)
+        return self.provider in HOSTED_PROVIDERS
 
 
 class BenchmarkCase(_Strict):
