@@ -82,9 +82,10 @@ def test_evaluator_alias_coercion() -> None:
 
 def test_the_committed_schema_matches_the_models() -> None:
     # The resource is generated; a field added to a model without regenerating
-    # it would publish a schema that rejects valid benchmark files.
+    # it would publish a schema that rejects valid benchmark files. Read from
+    # the package itself, so this also holds against an installed wheel.
     import json
-    from pathlib import Path
+    from importlib.resources import files
 
-    resource = Path(__file__).resolve().parents[2] / "model_swap_bench" / "resources" / "benchmark.schema.json"
+    resource = files("model_swap_bench").joinpath("resources/benchmark.schema.json")
     assert json.loads(resource.read_text(encoding="utf-8")) == json.loads(schema_json())

@@ -8,6 +8,15 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0b5] - 2026-11-24
+
+A security release that closes what 0.1.0b4 left open. **If a model's
+`base_url` ever carried a token in its query string, rotate it and scrub your
+stored runs**: 0.1.0b4 refused `user:password@` but still recorded
+`?key=...` in every run artefact. Such a URL is now refused; parameters an
+endpoint requires go in the new `default_query`. The `agentforge-oss` floor
+also rises to 0.5.5.
+
 ### Security
 - **A token in a `base_url` query string was written to every run artefact.
   Affects every published version, 0.1.0a1 through 0.1.0b4.** 0.1.0b4 refused
