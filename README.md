@@ -280,7 +280,7 @@ sole evaluator; judge-model mode on the roadmap).
 ## CLI
 
 `doctor` · `init` · `validate` · `schema` · `models` · `providers` · `run` ·
-`compare` · `gate` · `report` · `exit-report` · `route-plan` ·
+`compare` · `gate` · `report` · `exit-report` · `swap-evidence` · `route-plan` ·
 `dataset validate|inspect|digest|create|split|redact` · `outcomes summarize` ·
 `workflow evaluate` · `replay sanitize` · `telemetry export` ·
 `runs list|show` · `reproduce` · `clean` · `pricing show|validate|set` ·

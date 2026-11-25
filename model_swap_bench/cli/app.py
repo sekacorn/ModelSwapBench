@@ -174,6 +174,20 @@ def report(
     commands.report(run_id, fmt=fmt, out=output_file, root=output_dir)
 
 
+@app.command("swap-evidence")
+@guard
+def swap_evidence(
+    run_id: Annotated[str, typer.Argument(help="Run id or 'latest'.")] = "latest",
+    candidate: Annotated[
+        str | None, typer.Option("--candidate", help="Candidate alias. Optional when the run has exactly one replacement candidate.")
+    ] = None,
+    output_file: Annotated[Path | None, typer.Option("--output", help="Write the document here instead of printing it.")] = None,
+    output_dir: Annotated[Path | None, typer.Option("--root", help="Storage root.")] = None,
+) -> None:
+    """Write a stored run's baseline-versus-candidate result as model-swap-evidence.v1."""
+    commands.swap_evidence(run_id, candidate=candidate, out=output_file, root=output_dir)
+
+
 @app.command("exit-report")
 @guard
 def exit_report(

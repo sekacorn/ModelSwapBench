@@ -56,6 +56,7 @@ from model_swap_bench.reports.route_plan import (
     render_route_aimeter_export_json,
     render_route_audit_events_jsonl,
 )
+from model_swap_bench.reports.swap_evidence import build_swap_evidence, render_swap_evidence_json
 from model_swap_bench.results import BenchmarkRun, CaseStatus
 from model_swap_bench.storage import RunRepository
 from model_swap_bench.telemetry import render_otel_jsonl, workflow_to_otel
@@ -218,6 +219,25 @@ def report(run_ref: str, *, fmt: str, out: Path | None, root: Path | None) -> No
         output.success(f"{fmt} report written to {out}")
     else:
         output.info(text)
+
+
+def swap_evidence(run_ref: str, *, candidate: str | None, out: Path | None, root: Path | None) -> None:
+    repo = RunRepository(root or Path.cwd())
+    run_result = repo.load(run_ref)
+    suite = repo.load_suite_snapshot(run_ref)
+    if candidate is None:
+        candidates = [d.candidate_model for d in run_result.replacement_decisions]
+        if len(candidates) != 1:
+            raise ConfigError("this run does not have exactly one replacement candidate; name one with --candidate.")
+        candidate = candidates[0]
+    text = render_swap_evidence_json(build_swap_evidence(run_result, suite, candidate))
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text, encoding="utf-8")
+        output.success(f"model-swap-evidence.v1 written to {out}")
+    else:
+        # Plain stdout: the document must not pass through console markup.
+        print(text, end="")  # noqa: T201
 
 
 def exit_report(
