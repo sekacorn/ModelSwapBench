@@ -17,7 +17,12 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   importing this package. No prompt, output, case id, error text, cost or full
   URL is written. The JSON Schema ships in the package and is generated from
   the models; fixtures cover every variant. See `docs/model-swap-evidence.md`.
-  Nothing reads this document yet: the suite's reader is a later release.
+  The AI Infrastructure Suite's schema for the format is canonical; this
+  package's may be narrower, never wider.
+- **`suite-contract` CI job.** Installs the AI Infrastructure Suite from its
+  main branch and checks every emitted `model-swap-evidence.v1` variant
+  against the suite's canonical schema and reader, which recomputes the
+  verdict and refuses one that disagrees.
 
 ## [0.1.0b5] - 2026-11-24
 
