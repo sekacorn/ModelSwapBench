@@ -6,7 +6,7 @@ Run the same workflow across local, open-weight, self-hosted, and hosted models.
 Measure quality, latency, policy compliance, and **cost per successful outcome**
 before you commit to a vendor.
 
-> Status: **0.1.0b4 beta** - usable and fully offline-capable, with hardened evidence
+> Status: **0.1.0b5 beta** - usable and fully offline-capable, with hardened evidence
 > semantics (unknown evidence is never treated as zero or as a pass). Beta does not mean
 > production-certified or universally safe; APIs may still change before 1.0.
 
