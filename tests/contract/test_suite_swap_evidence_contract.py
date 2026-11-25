@@ -75,3 +75,23 @@ def test_every_emitted_variant_is_accepted_by_the_suites_reader(name: str) -> No
     # The reader recomputes the verdict; agreeing with ours is the contract.
     assert evidence.verdict.eligible is build(name).verdict.eligible
     assert evidence.verdict.recommendation == build(name).verdict.recommendation
+
+
+def test_the_vendored_locality_table_equals_the_suites() -> None:
+    from importlib.resources import files
+    from pathlib import Path
+
+    suite_table = json.loads(files("ai_infrastructure_suite").joinpath("data/endpoint-locality-cases.json").read_text(encoding="utf-8"))
+    vendored = json.loads((Path(__file__).resolve().parents[1] / "fixtures" / "endpoint-locality-cases.json").read_text(encoding="utf-8"))
+    assert vendored == suite_table
+
+
+def test_this_rule_agrees_with_the_suites_rule_on_every_case() -> None:
+    from importlib.resources import files
+
+    from model_swap_bench.endpoints import endpoint_is_local
+
+    inventory = _import_or_skip("ai_infrastructure_suite.provider_inventory")
+    table = json.loads(files("ai_infrastructure_suite").joinpath("data/endpoint-locality-cases.json").read_text(encoding="utf-8"))
+    for case in table["cases"]:
+        assert endpoint_is_local(case["url"]) is inventory.origin_is_local(case["url"]) is case["local"], case["url"]
