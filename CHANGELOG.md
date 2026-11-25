@@ -24,6 +24,15 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   against the suite's canonical schema and reader, which recomputes the
   verdict and refuses one that disagrees.
 
+### Changed
+- **`swap-evidence` refuses a model declared `local` whose endpoint is not
+  local**: a public host, an unresolved name, or a vendor SDK's hosted default.
+  The AI Infrastructure Suite refuses such a document, and this writer must
+  never be wider than the suite's schema and reader. Declare
+  `deployment: self_hosted` or `hosted` instead. Deterministic fixtures are
+  exempt. Note that `deployment` defaults to `local`, so a hosted candidate
+  without an explicit deployment is now refused here.
+
 ## [0.1.0b5] - 2026-11-24
 
 A security release that closes what 0.1.0b4 left open. **If a model's

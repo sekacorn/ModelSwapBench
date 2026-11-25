@@ -15,6 +15,7 @@ from typer.testing import CliRunner
 
 from model_swap_bench import __version__
 from model_swap_bench.cli.app import app
+from model_swap_bench.config.models import DeploymentType, ProviderKind
 from model_swap_bench.errors import ConfigError
 from model_swap_bench.reports.swap_evidence import (
     MAX_TEXT_CHARS,
@@ -344,3 +345,54 @@ def test_the_command_needs_a_candidate_named_when_there_is_not_exactly_one(tmp_p
     result = runner.invoke(app, ["swap-evidence"])
     assert result.exit_code != 0
     assert "--candidate" in result.output
+
+
+# --- a side declared local at an endpoint that is not local ---------------------
+
+
+def _with_candidate(name: str, **update: Any) -> tuple[Any, Any, str]:
+    run, suite, alias = run_for(name)
+    models = [suite.models[0], suite.models[1].model_copy(update=update)]
+    return run, suite.model_copy(update={"models": models}), alias
+
+
+@pytest.mark.parametrize(
+    "update",
+    [
+        {"base_url": "https://gpu.vendor-c.example/v1"},
+        {"base_url": "http://ollama.internal:11434"},
+        {"base_url": "http://100.64.0.1:11434"},
+    ],
+)
+def test_a_candidate_declared_local_at_a_host_that_is_not_local_is_refused(update: dict[str, Any]) -> None:
+    run, suite, alias = _with_candidate("local-accepted", **update)
+    with pytest.raises(ConfigError, match="declared local but its endpoint is not local") as excinfo:
+        build_swap_evidence(run, suite, alias)
+    assert "vendor-c" not in str(excinfo.value)
+    assert "ollama.internal" not in str(excinfo.value)
+
+
+def test_a_vendor_sdk_declared_local_with_no_endpoint_is_refused() -> None:
+    run, suite, alias = _with_candidate("local-accepted", provider=ProviderKind.ANTHROPIC, base_url=None)
+    with pytest.raises(ConfigError, match="candidate model is declared local"):
+        build_swap_evidence(run, suite, alias)
+
+
+def test_the_baseline_is_held_to_the_same_rule() -> None:
+    run, suite, alias = run_for("local-accepted")
+    baseline = suite.models[0].model_copy(update={"deployment": DeploymentType.LOCAL})
+    with pytest.raises(ConfigError, match="baseline model is declared local"):
+        build_swap_evidence(run, suite.model_copy(update={"models": [baseline, suite.models[1]]}), alias)
+
+
+@pytest.mark.parametrize("deployment", [DeploymentType.SELF_HOSTED, DeploymentType.HOSTED])
+def test_self_hosted_or_hosted_at_a_public_host_is_written(deployment: DeploymentType) -> None:
+    run, suite, alias = _with_candidate("local-accepted", base_url="https://gpu.vendor-c.example/v1", deployment=deployment)
+    document = json.loads(render_swap_evidence_json(build_swap_evidence(run, suite, alias)))
+    assert document["candidate"]["deployment_declared"] == deployment.value
+    assert document["candidate"]["endpoint_origin"] == "https://gpu.vendor-c.example"
+
+
+def test_a_deterministic_fixture_declared_local_is_written() -> None:
+    run, suite, alias = _with_candidate("fake-candidate", deployment=DeploymentType.LOCAL)
+    assert build_swap_evidence(run, suite, alias).candidate.deployment_declared is DeploymentType.LOCAL

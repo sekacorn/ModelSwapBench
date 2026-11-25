@@ -26,6 +26,9 @@ modelswapbench swap-evidence latest --candidate local_alt --output evidence/swap
 - `--candidate` may be left out when the run has exactly one candidate.
 - Without `--output` the document is printed.
 - One document covers one candidate. Run the command once per candidate.
+- A model declared `local` whose endpoint is not local (a public host, an
+  unresolved name, or a vendor SDK's hosted default) is refused, as the suite
+  refuses it. Declare `self_hosted` or `hosted` instead.
 
 ## What it contains
 
