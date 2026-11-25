@@ -8,6 +8,13 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **Reserved and limited-broadcast addresses are hosted, not local.**
+  `240.0.0.0/4` (RFC 1112 reserved) and `255.255.255.255`, and their
+  IPv4-mapped forms. Python's `is_private` includes them, so a `base_url`
+  there was classified as local. Pinned by six new cases in the shared
+  `endpoint-locality-cases.v1` table, vendored in `tests/fixtures/`.
+
 ## [0.1.0b6] - 2026-11-25
 
 Adds the `model-swap-evidence.v1` writer that the AI Infrastructure Suite's
