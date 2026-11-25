@@ -78,3 +78,13 @@ def test_evaluator_alias_coercion() -> None:
     d["cases"][0]["evaluators"] = ["forbidden_content"]
     suite = build_suite(d)
     assert suite.cases[0].evaluators[0].name == "forbidden_content"
+
+
+def test_the_committed_schema_matches_the_models() -> None:
+    # The resource is generated; a field added to a model without regenerating
+    # it would publish a schema that rejects valid benchmark files.
+    import json
+    from pathlib import Path
+
+    resource = Path(__file__).resolve().parents[2] / "model_swap_bench" / "resources" / "benchmark.schema.json"
+    assert json.loads(resource.read_text(encoding="utf-8")) == json.loads(schema_json())

@@ -13,7 +13,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from model_swap_bench.config.models import ModelCandidate, ProviderKind
-from model_swap_bench.endpoints import URL_CREDENTIALS_MESSAGE, url_has_credentials
+from model_swap_bench.endpoints import url_problem
 from model_swap_bench.errors import ConfigError
 from model_swap_bench.results import ToolCallRecord
 
@@ -67,8 +67,9 @@ class Provider(abc.ABC):
         # Configuration loading already refuses this. Checked again here, where
         # requests are sent, because a candidate built with model_construct()
         # skips validation.
-        if candidate.base_url and url_has_credentials(candidate.base_url):
-            raise ConfigError(f"model {candidate.alias!r}: {URL_CREDENTIALS_MESSAGE}")
+        problem = url_problem(candidate.base_url) if candidate.base_url else None
+        if problem is not None:
+            raise ConfigError(f"model {candidate.alias!r}: {problem}")
         self.candidate = candidate
 
     @property

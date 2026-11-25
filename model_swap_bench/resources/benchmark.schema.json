@@ -485,6 +485,13 @@
           "default": null,
           "title": "Base Url"
         },
+        "default_query": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Default Query",
+          "type": "object"
+        },
         "api_key_env": {
           "anyOf": [
             {

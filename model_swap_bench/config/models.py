@@ -10,9 +10,9 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 
-from model_swap_bench.endpoints import URL_CREDENTIALS_MESSAGE, endpoint_is_local, url_has_credentials
+from model_swap_bench.endpoints import REDACTED, default_query_problem, endpoint_is_local, url_problem
 
 
 class ProviderKind(str, Enum):
@@ -133,6 +133,10 @@ class ModelCandidate(_Strict):
     model: str = Field(description="Provider-specific model id, e.g. 'qwen2.5:3b'.")
     deployment: DeploymentType = DeploymentType.LOCAL
     base_url: str | None = None
+    #: Query parameters the endpoint requires on every request, such as an
+    #: ``api-version``. A query string in ``base_url`` is refused. Values are
+    #: sent, and never written to a run artefact or a log.
+    default_query: dict[str, str] = Field(default_factory=dict)
     api_key_env: str | None = Field(
         default=None,
         description="Name of the environment variable holding the API key (never the key itself).",
@@ -153,10 +157,31 @@ class ModelCandidate(_Strict):
 
     @field_validator("base_url")
     @classmethod
-    def _refuse_credentials_in_base_url(cls, value: str | None) -> str | None:
-        if value is not None and url_has_credentials(value):
-            raise ValueError(URL_CREDENTIALS_MESSAGE)
+    def _refuse_secrets_in_base_url(cls, value: str | None) -> str | None:
+        problem = url_problem(value) if value is not None else None
+        if problem is not None:
+            raise ValueError(problem)
         return value
+
+    @field_validator("default_query")
+    @classmethod
+    def _check_default_query(cls, value: dict[str, str]) -> dict[str, str]:
+        problem = default_query_problem(value)
+        if problem is not None:
+            raise ValueError(problem)
+        return value
+
+    @field_serializer("default_query")
+    def _never_serialize_default_query_values(self, value: dict[str, str]) -> dict[str, str]:
+        # Every dump of a candidate is a record: the stored suite snapshot, the
+        # suite hash, a report. The names are kept; the values never are.
+        return dict.fromkeys(value, REDACTED)
+
+    @model_validator(mode="after")
+    def _default_query_needs_a_provider_that_sends_it(self) -> ModelCandidate:
+        if self.default_query and self.provider is not ProviderKind.OPENAI_COMPATIBLE:
+            raise ValueError("default_query is only sent by the openai_compatible provider.")
+        return self
 
     @property
     def is_hosted(self) -> bool:
