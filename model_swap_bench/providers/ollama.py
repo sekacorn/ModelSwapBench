@@ -41,7 +41,7 @@ class OllamaProvider(Provider):
         except httpx.HTTPError as exc:
             return HealthStatus(
                 available=False,
-                detail=f"cannot reach Ollama at {self._base_url}: {exc}",
+                detail=f"cannot reach Ollama at {self._base_url} ({type(exc).__name__})",
                 endpoint=self._base_url,
             )
         names = {m.get("name", "") for m in resp.json().get("models", [])}
@@ -70,9 +70,10 @@ class OllamaProvider(Provider):
         except httpx.TimeoutException as exc:
             raise ProviderTimeoutError(f"Ollama call timed out after {request.timeout_seconds}s") from exc
         except httpx.ConnectError as exc:
-            raise ProviderUnavailableError(f"cannot connect to Ollama at {self._base_url}: {exc}") from exc
+            raise ProviderUnavailableError(f"cannot connect to Ollama ({type(exc).__name__})") from None
         except httpx.HTTPStatusError as exc:
-            raise ProviderResponseError(f"Ollama returned HTTP {exc.response.status_code}: {exc.response.text[:200]}") from exc
+            # The status only. The response body is upstream text and is not stored.
+            raise ProviderResponseError(f"Ollama returned HTTP {exc.response.status_code}") from None
         data = resp.json()
         content = data.get("message", {}).get("content")
         if not isinstance(content, str):

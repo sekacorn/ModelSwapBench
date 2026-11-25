@@ -53,7 +53,7 @@ class ForgeProviderAdapter(Provider):
         except httpx.HTTPError as exc:
             return HealthStatus(
                 available=False,
-                detail=f"Forge target Ollama unreachable at {self._base_url}: {exc}",
+                detail=f"Forge target Ollama unreachable at {self._base_url} ({type(exc).__name__})",
                 endpoint=self._base_url,
             )
         names = {m.get("name", "") for m in resp.json().get("models", [])}
@@ -76,7 +76,8 @@ class ForgeProviderAdapter(Provider):
                 temperature=request.temperature,
             )
         except Exception as exc:  # noqa: BLE001 - normalize provider errors
-            raise ProviderResponseError(f"Forge provider call failed: {exc}") from exc
+            # The type only: the wrapped provider's message is not stored with the case.
+            raise ProviderResponseError(f"Forge provider call failed ({type(exc).__name__})") from None
 
         content = getattr(response, "content", None)
         if not isinstance(content, str):
