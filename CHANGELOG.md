@@ -25,6 +25,14 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   verdict and refuses one that disagrees.
 
 ### Changed
+- **The documentation and benchmarking ranges are hosted, not local.**
+  `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`, `198.18.0.0/15` and
+  `2001:db8::/32`, and their IPv4-mapped forms. Python's `is_private`
+  includes them, so a `base_url` there was classified as local, which could
+  let a run treat a remote endpoint as on-machine. Pinned by the AI
+  Infrastructure Suite's shared `endpoint-locality-cases.v1` table, vendored
+  in `tests/fixtures/` and checked against the suite's copy in the
+  `suite-contract` job.
 - **`swap-evidence` refuses a model declared `local` whose endpoint is not
   local**: a public host, an unresolved name, or a vendor SDK's hosted default.
   The AI Infrastructure Suite refuses such a document, and this writer must
