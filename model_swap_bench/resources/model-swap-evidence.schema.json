@@ -1,0 +1,411 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sekacorn/ModelSwapBench/schemas/model-swap-evidence.v1.json",
+  "title": "model-swap-evidence.v1",
+  "$defs": {
+    "ConstraintOutcome": {
+      "additionalProperties": false,
+      "description": "One suite-level constraint checked against the candidate.",
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9_]{1,64}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "passed"
+      ],
+      "title": "ConstraintOutcome",
+      "type": "object"
+    },
+    "DeploymentType": {
+      "description": "Where a model physically runs \u2014 used for privacy/portability classification.",
+      "enum": [
+        "local",
+        "self_hosted",
+        "hosted",
+        "test"
+      ],
+      "title": "DeploymentType",
+      "type": "string"
+    },
+    "GeneratedBy": {
+      "additionalProperties": false,
+      "description": "The producer. A reader treats this as a label, not as proof.",
+      "properties": {
+        "tool": {
+          "const": "modelswapbench",
+          "title": "Tool",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool",
+        "version"
+      ],
+      "title": "GeneratedBy",
+      "type": "object"
+    },
+    "ModelSide": {
+      "additionalProperties": false,
+      "description": "One side of the comparison: where it runs and what it scored.",
+      "properties": {
+        "alias": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Alias",
+          "type": "string"
+        },
+        "provider_kind": {
+          "$ref": "#/$defs/ProviderKind"
+        },
+        "model": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "endpoint_origin": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "pattern": "^https?://(\\[[0-9a-f:.]+\\]|[a-z0-9.-]+)(:[0-9]{1,5})?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Endpoint Origin"
+        },
+        "deployment_declared": {
+          "$ref": "#/$defs/DeploymentType"
+        },
+        "summary": {
+          "$ref": "#/$defs/SummaryNumbers"
+        }
+      },
+      "required": [
+        "alias",
+        "provider_kind",
+        "model",
+        "endpoint_origin",
+        "deployment_declared",
+        "summary"
+      ],
+      "title": "ModelSide",
+      "type": "object"
+    },
+    "ProviderKind": {
+      "description": "Supported provider backends.",
+      "enum": [
+        "deterministic",
+        "ollama",
+        "forge",
+        "openai_compatible",
+        "openai",
+        "anthropic",
+        "bedrock"
+      ],
+      "title": "ProviderKind",
+      "type": "string"
+    },
+    "RunBinding": {
+      "additionalProperties": false,
+      "description": "Which stored run the numbers came from.",
+      "properties": {
+        "run_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "manifest_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Hash",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "mode": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Mode",
+          "type": "string"
+        },
+        "suite_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Suite Name",
+          "type": "string"
+        },
+        "suite_version": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Suite Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "manifest_hash",
+        "created_at",
+        "mode",
+        "suite_name",
+        "suite_version"
+      ],
+      "title": "RunBinding",
+      "type": "object"
+    },
+    "SummaryNumbers": {
+      "additionalProperties": false,
+      "description": "The raw counts and rates for one model. Cases not counted here were skipped.",
+      "properties": {
+        "sample_count": {
+          "minimum": 0,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "success_count": {
+          "minimum": 0,
+          "title": "Success Count",
+          "type": "integer"
+        },
+        "failure_count": {
+          "minimum": 0,
+          "title": "Failure Count",
+          "type": "integer"
+        },
+        "error_count": {
+          "minimum": 0,
+          "title": "Error Count",
+          "type": "integer"
+        },
+        "timeout_count": {
+          "minimum": 0,
+          "title": "Timeout Count",
+          "type": "integer"
+        },
+        "quality_score": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Quality Score"
+        },
+        "tool_accuracy": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Tool Accuracy"
+        },
+        "policy_pass_rate": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Policy Pass Rate"
+        },
+        "p95_latency_ms": {
+          "minimum": 0.0,
+          "title": "P95 Latency Ms",
+          "type": "number"
+        },
+        "evidence_sufficient": {
+          "title": "Evidence Sufficient",
+          "type": "boolean"
+        },
+        "minimum_recommended_sample_size": {
+          "minimum": 1,
+          "title": "Minimum Recommended Sample Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sample_count",
+        "success_count",
+        "failure_count",
+        "error_count",
+        "timeout_count",
+        "quality_score",
+        "tool_accuracy",
+        "policy_pass_rate",
+        "p95_latency_ms",
+        "evidence_sufficient",
+        "minimum_recommended_sample_size"
+      ],
+      "title": "SummaryNumbers",
+      "type": "object"
+    },
+    "Thresholds": {
+      "additionalProperties": false,
+      "description": "The limits the run was judged against.",
+      "properties": {
+        "maximum_quality_drop": {
+          "minimum": 0.0,
+          "title": "Maximum Quality Drop",
+          "type": "number"
+        },
+        "minimum_reliability": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Minimum Reliability"
+        },
+        "maximum_latency_ms": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Maximum Latency Ms"
+        },
+        "minimum_cost_reduction": {
+          "title": "Minimum Cost Reduction",
+          "type": "number"
+        },
+        "hosted_candidates_permitted": {
+          "title": "Hosted Candidates Permitted",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "maximum_quality_drop",
+        "minimum_reliability",
+        "maximum_latency_ms",
+        "minimum_cost_reduction",
+        "hosted_candidates_permitted"
+      ],
+      "title": "Thresholds",
+      "type": "object"
+    },
+    "Verdict": {
+      "additionalProperties": false,
+      "description": "This package's own decision, for a reader to check against the numbers.",
+      "properties": {
+        "recommendation": {
+          "enum": [
+            "recommended replacement",
+            "recommended with conditions",
+            "suitable as first-stage model with escalation",
+            "not recommended",
+            "insufficient evidence"
+          ],
+          "title": "Recommendation",
+          "type": "string"
+        },
+        "eligible": {
+          "title": "Eligible",
+          "type": "boolean"
+        },
+        "policy_pass": {
+          "title": "Policy Pass",
+          "type": "boolean"
+        },
+        "deployment_compatible": {
+          "title": "Deployment Compatible",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "recommendation",
+        "eligible",
+        "policy_pass",
+        "deployment_compatible"
+      ],
+      "title": "Verdict",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A ``model-swap-evidence.v1`` document.",
+  "properties": {
+    "schema_version": {
+      "const": "model-swap-evidence.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "generated_by": {
+      "$ref": "#/$defs/GeneratedBy"
+    },
+    "run": {
+      "$ref": "#/$defs/RunBinding"
+    },
+    "baseline": {
+      "$ref": "#/$defs/ModelSide"
+    },
+    "candidate": {
+      "$ref": "#/$defs/ModelSide"
+    },
+    "thresholds": {
+      "$ref": "#/$defs/Thresholds"
+    },
+    "candidate_constraints": {
+      "items": {
+        "$ref": "#/$defs/ConstraintOutcome"
+      },
+      "maxItems": 16,
+      "title": "Candidate Constraints",
+      "type": "array"
+    },
+    "verdict": {
+      "$ref": "#/$defs/Verdict"
+    }
+  },
+  "required": [
+    "schema_version",
+    "generated_by",
+    "run",
+    "baseline",
+    "candidate",
+    "thresholds",
+    "candidate_constraints",
+    "verdict"
+  ],
+  "type": "object"
+}

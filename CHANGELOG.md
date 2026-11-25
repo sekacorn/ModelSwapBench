@@ -8,6 +8,17 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **`modelswapbench swap-evidence`** writes a stored run's baseline-versus-
+  candidate result as a `model-swap-evidence.v1` document: the run binding,
+  each side's provider kind, model and endpoint origin, the summary counts and
+  rates, the thresholds, and this package's own verdict. It is the evidence the
+  AI Infrastructure Suite's planned `model_providers` vector will read, without
+  importing this package. No prompt, output, case id, error text, cost or full
+  URL is written. The JSON Schema ships in the package and is generated from
+  the models; fixtures cover every variant. See `docs/model-swap-evidence.md`.
+  Nothing reads this document yet: the suite's reader is a later release.
+
 ## [0.1.0b5] - 2026-11-24
 
 A security release that closes what 0.1.0b4 left open. **If a model's

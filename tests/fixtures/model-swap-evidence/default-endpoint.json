@@ -1,0 +1,69 @@
+{
+  "baseline": {
+    "alias": "current",
+    "deployment_declared": "hosted",
+    "endpoint_origin": "https://llm.vendor-a.example",
+    "model": "model-large",
+    "provider_kind": "openai_compatible",
+    "summary": {
+      "error_count": 0,
+      "evidence_sufficient": true,
+      "failure_count": 0,
+      "minimum_recommended_sample_size": 20,
+      "p95_latency_ms": 840.0,
+      "policy_pass_rate": null,
+      "quality_score": 0.92,
+      "sample_count": 24,
+      "success_count": 24,
+      "timeout_count": 0,
+      "tool_accuracy": null
+    }
+  },
+  "candidate": {
+    "alias": "default_alt",
+    "deployment_declared": "local",
+    "endpoint_origin": "http://localhost:11434",
+    "model": "model-small",
+    "provider_kind": "ollama",
+    "summary": {
+      "error_count": 0,
+      "evidence_sufficient": true,
+      "failure_count": 0,
+      "minimum_recommended_sample_size": 20,
+      "p95_latency_ms": 1500.0,
+      "policy_pass_rate": null,
+      "quality_score": 0.9,
+      "sample_count": 24,
+      "success_count": 24,
+      "timeout_count": 0,
+      "tool_accuracy": null
+    }
+  },
+  "candidate_constraints": [],
+  "generated_by": {
+    "tool": "modelswapbench",
+    "version": "0.1.0b5"
+  },
+  "run": {
+    "created_at": "2026-11-25T12:00:00Z",
+    "manifest_hash": "c5125ab067e11d4049563d9e90614c8a473e7b8452e1264fcc23d7a858cdd5d9",
+    "mode": "compare",
+    "run_id": "run-default-endpoint",
+    "suite_name": "swap-default-endpoint",
+    "suite_version": "1.0"
+  },
+  "schema_version": "model-swap-evidence.v1",
+  "thresholds": {
+    "hosted_candidates_permitted": true,
+    "maximum_latency_ms": null,
+    "maximum_quality_drop": 0.05,
+    "minimum_cost_reduction": 0.2,
+    "minimum_reliability": null
+  },
+  "verdict": {
+    "deployment_compatible": true,
+    "eligible": true,
+    "policy_pass": false,
+    "recommendation": "recommended with conditions"
+  }
+}
