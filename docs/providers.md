@@ -40,9 +40,24 @@ call. v0.1 exercises Forge's provider layer, not full agent orchestration (roadm
 For vLLM, llama.cpp servers, LM Studio-compatible services, and local gateways.
 
 - Requires `base_url`. Classifies the endpoint as **local** or **external**.
-- `base_url` must not contain credentials (`user:password@host`): such a URL
-  is refused when the suite loads, because run artefacts record the endpoint
-  and HTTP clients log it. Use `api_key_env`.
+- `base_url` must not contain credentials (`user:password@host`), a fragment
+  (`#...`) or a query string (`?...`): such a URL is refused when the suite
+  loads, because run artefacts record the endpoint and HTTP clients log it.
+  Use `api_key_env` for the key.
+- Parameters the endpoint requires on every request, such as an `api-version`,
+  go in `default_query`:
+
+  ```yaml
+  base_url: https://llm.example.com/v1
+  default_query:
+    api-version: "2024-06-01"
+  ```
+
+  The values are sent with every request and never written anywhere else: the
+  stored suite, the manifest (which lists the parameter names only), results
+  and reports show `[redacted]`, and the HTTP client's log lines are redacted.
+  Because the stored suite holds no values, re-running from a stored snapshot
+  needs the original benchmark file.
 - External endpoints require `--allow-hosted` (data would leave the machine).
 - API key read from `api_key_env`; never written to results/reports.
 

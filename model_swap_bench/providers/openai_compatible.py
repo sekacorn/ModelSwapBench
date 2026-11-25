@@ -13,7 +13,7 @@ import os
 import httpx
 
 from model_swap_bench.config.models import ModelCandidate, ProviderKind
-from model_swap_bench.endpoints import endpoint_is_local
+from model_swap_bench.endpoints import endpoint_is_local, redact_query_values_in_logs
 from model_swap_bench.errors import (
     ConfigError,
     ProviderResponseError,
@@ -46,6 +46,9 @@ class OpenAICompatibleProvider(Provider):
             )
         self._timeout = candidate.timeout_seconds or 120.0
         self._api_key = os.environ.get(candidate.api_key_env) if candidate.api_key_env else None
+        self._default_query = dict(candidate.default_query)
+        if self._default_query:
+            redact_query_values_in_logs(self._default_query.values())
         self._client: httpx.AsyncClient | None = None
 
     @property
@@ -55,7 +58,12 @@ class OpenAICompatibleProvider(Provider):
     def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
             headers = {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
-            self._client = httpx.AsyncClient(base_url=self._base_url, timeout=self._timeout, headers=headers)
+            self._client = httpx.AsyncClient(
+                base_url=self._base_url,
+                timeout=self._timeout,
+                headers=headers,
+                params=self._default_query or None,
+            )
         return self._client
 
     async def health(self) -> HealthStatus:
@@ -65,7 +73,7 @@ class OpenAICompatibleProvider(Provider):
         except httpx.HTTPError as exc:
             return HealthStatus(
                 available=False,
-                detail=f"cannot reach OpenAI-compatible endpoint ({self.classification}): {exc}",
+                detail=f"cannot reach OpenAI-compatible endpoint ({self.classification}): {type(exc).__name__}",
                 endpoint=self._base_url,
                 hosted=not self._is_local,
             )
@@ -98,7 +106,7 @@ class OpenAICompatibleProvider(Provider):
         except httpx.HTTPStatusError as exc:
             raise ProviderResponseError(f"endpoint returned HTTP {exc.response.status_code}") from exc
         except httpx.HTTPError as exc:
-            raise ProviderUnavailableError(f"endpoint unreachable: {exc}") from exc
+            raise ProviderUnavailableError(f"endpoint unreachable ({type(exc).__name__})") from None
         data = resp.json()
         try:
             content = data["choices"][0]["message"]["content"]
