@@ -6,9 +6,13 @@ that result as a small, versioned JSON document that another tool can read
 without importing ModelSwapBench.
 
 It is written for the AI Infrastructure Suite's `model_providers` lock-in
-vector, which is still being built. Until the suite's reader ships, nothing
-consumes this document; the format is published now so the two sides can be
-tested against each other.
+vector, which is still being built. The suite reads it, recomputes the
+decision from the numbers, and refuses a document whose verdict disagrees.
+
+**The suite's schema is the canonical definition of this format.** The schema
+this package ships is generated from its own writer and may be narrower, never
+wider. The `suite-contract` CI job checks every variant this package emits
+against the suite's schema and reader.
 
 ## Writing one
 

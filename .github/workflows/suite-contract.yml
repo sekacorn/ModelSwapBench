@@ -1,0 +1,48 @@
+name: Suite Contract
+
+# ModelSwapBench and the AI Infrastructure Suite take no code dependency on
+# each other; the contract between them is the model-swap-evidence.v1
+# document, and the suite's schema is the canonical definition. This job
+# installs the suite from its main branch and checks that every variant this
+# package emits validates against that schema and is accepted by the suite's
+# reader, which recomputes the verdict and refuses one that disagrees.
+#
+# Its own workflow so it can carry a schedule: the suite changes on its own
+# cadence, and a nightly run surfaces a break within a day.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "29 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  suite-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+      - name: Install the suite from its main branch
+        # Not a declared dependency: the suite depends on this package, not the
+        # other way round. Installed for this job only; the contract tests skip
+        # when it is absent so the offline matrix stays offline.
+        run: |
+          python -m pip install "git+https://github.com/sekacorn/AI-Infrastructure-Suite.git@main"
+          python -c "import ai_infrastructure_suite as s; print('suite', s.__version__)"
+      - name: Validate every emitted variant against the suite
+        # The variable turns a missing suite into a failure, so a botched
+        # install can never report this check as passing. --no-cov: one
+        # directory, so the project's coverage gate does not apply here.
+        env:
+          MODELSWAPBENCH_REQUIRE_SUITE_CONTRACT: "1"
+        run: python -m pytest -v --no-cov tests/contract
