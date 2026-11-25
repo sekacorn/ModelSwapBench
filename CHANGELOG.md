@@ -8,6 +8,27 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Security
+- **A token in a `base_url` query string was written to every run artefact.
+  Affects every published version, 0.1.0a1 through 0.1.0b4.** 0.1.0b4 refused
+  credentials in a `base_url` (`user:password@host`) but still accepted
+  `https://host/v1?key=...`, and recorded that URL in `manifest.json`,
+  `run.json`, `results.jsonl` and `suite.json`. A `base_url` with a query
+  string or a fragment is now refused when the suite loads, for all three
+  providers, with an error that never repeats the URL. **If you ran any
+  earlier version with a token in a `base_url`, rotate it** and delete or
+  scrub the affected runs under `.modelswapbench/runs/`.
+- An unreachable `openai_compatible` endpoint now reports the error type only.
+  The HTTP client's error text is no longer stored with each case.
+
+### Added
+- **`default_query`** on a model, for query parameters an endpoint requires on
+  every request, such as an `api-version`. It is sent by the
+  `openai_compatible` provider and refused on the others. Its values are never
+  written to a run artefact or a log: every serialization of a model shows
+  `[redacted]`, the manifest lists the parameter names only
+  (`default_query_params`), and the HTTP client's log lines are redacted.
+
 ## [0.1.0b4] - 2026-11-24
 
 A security release. **If you ever put credentials in a model's `base_url`,

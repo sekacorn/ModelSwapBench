@@ -15,6 +15,9 @@ route and this check never performs DNS.
 from __future__ import annotations
 
 import ipaddress
+import logging
+import re
+from collections.abc import Iterable
 from typing import Final
 from urllib.parse import urlparse, urlsplit
 
@@ -43,10 +46,21 @@ def endpoint_is_local(base_url: str) -> bool:
     return bool(address.is_private or address.is_loopback or address.is_link_local)
 
 
-#: Raised verbatim. It says how to fix the problem and never repeats the URL.
+#: Raised verbatim. Each says how to fix the problem and never repeats the URL.
 URL_CREDENTIALS_MESSAGE: Final = (
     "base_url must not contain credentials (user:password@host). Remove them from the URL and supply the key through api_key_env."
 )
+URL_FRAGMENT_MESSAGE: Final = "base_url must not contain a fragment (#...)."
+URL_QUERY_MESSAGE: Final = (
+    "base_url must not contain a query string. Put parameters the endpoint requires in default_query, "
+    "whose values are redacted in run artefacts and logs."
+)
+
+#: Bounds on ``default_query``: a few named parameters such as ``api-version``.
+MAX_DEFAULT_QUERY_PARAMS: Final = 16
+MAX_DEFAULT_QUERY_VALUE_CHARS: Final = 512
+REDACTED: Final = "[redacted]"
+_QUERY_KEY = re.compile(r"[A-Za-z0-9_.-]{1,64}")
 
 
 def url_has_credentials(base_url: str) -> bool:
@@ -63,3 +77,74 @@ def url_has_credentials(base_url: str) -> bool:
     except ValueError:
         authority = base_url.split("//", 1)[-1].split("/", 1)[0]
         return "@" in authority
+
+
+def url_problem(base_url: str) -> str | None:
+    """Why a configured ``base_url`` is refused, as a fixed message, or ``None``.
+
+    Credentials, fragments and query strings are all refused. Run artefacts
+    record each model's endpoint and the HTTP client logs every request URL, so
+    anything secret in the URL would be written to both. Parameters an endpoint
+    needs go in ``default_query`` instead. The message never contains any part
+    of the URL.
+    """
+    if url_has_credentials(base_url):
+        return URL_CREDENTIALS_MESSAGE
+    if "#" in base_url:
+        return URL_FRAGMENT_MESSAGE
+    if "?" in base_url:
+        return URL_QUERY_MESSAGE
+    return None
+
+
+def default_query_problem(default_query: object) -> str | None:
+    """Why a ``default_query`` is refused, as a fixed message, or ``None``."""
+    if not isinstance(default_query, dict):
+        return "default_query must be a mapping of parameter names to string values."
+    if len(default_query) > MAX_DEFAULT_QUERY_PARAMS:
+        return "default_query has too many parameters."
+    for key, value in default_query.items():
+        if not isinstance(key, str) or not _QUERY_KEY.fullmatch(key):
+            return "default_query has an invalid parameter name."
+        if not isinstance(value, str) or not value or len(value) > MAX_DEFAULT_QUERY_VALUE_CHARS:
+            return "default_query has an invalid value."
+    return None
+
+
+# --- keeping default_query values out of logs ---------------------------------
+
+_LOGGERS_THAT_PRINT_URLS: Final = ("httpx", "httpcore")
+_QUERY_VALUE = re.compile(r"([?&][^=&\s\"'#]+=)[^&\s\"'#]+")
+_SECRET_QUERY_VALUES: set[str] = set()
+
+
+class _RedactQueryValues(logging.Filter):
+    """Replace query-string values, and any registered value, in a log record."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            message = record.getMessage()
+        except Exception:  # noqa: BLE001 - never break logging over redaction
+            return True
+        redacted = _QUERY_VALUE.sub(lambda m: m.group(1) + REDACTED, message)
+        for value in sorted(_SECRET_QUERY_VALUES, key=len, reverse=True):
+            redacted = redacted.replace(value, REDACTED)
+        if redacted != message:
+            record.msg = redacted
+            record.args = None
+        return True
+
+
+_FILTER = _RedactQueryValues()
+
+
+def redact_query_values_in_logs(values: Iterable[str] = ()) -> None:
+    """Keep query values, and these values in particular, out of HTTP client logs.
+
+    Idempotent. Installed whenever a provider is given a ``default_query``.
+    """
+    _SECRET_QUERY_VALUES.update(value for value in values if value)
+    for name in _LOGGERS_THAT_PRINT_URLS:
+        logger = logging.getLogger(name)
+        if _FILTER not in logger.filters:
+            logger.addFilter(_FILTER)

@@ -71,7 +71,11 @@ def build_manifest(suite: BenchmarkSuite, run_id: str, suite_dir: Path | None = 
                 "provider": m.provider.value,
                 "model": m.model,
                 "deployment": m.deployment.value,
-                "endpoint": m.base_url,  # credentials are refused when the suite loads
+                # Credentials, fragments and query strings are refused when the
+                # suite loads, so this is safe to record.
+                "endpoint": m.base_url,
+                # Parameter names only. The values are never recorded.
+                "default_query_params": sorted(m.default_query),
             }
             for m in suite.models
         ],
