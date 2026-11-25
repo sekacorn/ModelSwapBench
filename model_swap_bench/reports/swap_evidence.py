@@ -36,6 +36,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from model_swap_bench._version import __version__
 from model_swap_bench.config.models import BenchmarkSuite, DeploymentType, ModelCandidate, ProviderKind
+from model_swap_bench.endpoints import endpoint_is_local
 from model_swap_bench.errors import ConfigError
 from model_swap_bench.results import BenchmarkRun, ModelSummary
 from model_swap_bench.scoring.replacement import (
@@ -220,6 +221,24 @@ def _numbers(summary: ModelSummary) -> dict[str, Any]:
     }
 
 
+def _refuse_local_at_a_host_that_is_not_local(candidate: ModelCandidate, origin: str | None, role: str) -> None:
+    """Refuse what the AI Infrastructure Suite refuses, so this writer is never wider.
+
+    A model declared ``local`` whose endpoint is not local (a public host, an
+    unresolved name, or a hosted SDK default) would send content off the
+    machine while the document said it stayed. The suite's reader refuses such
+    a document, and so does the provider inventory. Declare ``self_hosted`` or
+    ``hosted`` instead. Deterministic fixtures have no endpoint and are exempt.
+    """
+    if candidate.deployment is not DeploymentType.LOCAL or candidate.provider is ProviderKind.DETERMINISTIC:
+        return
+    if origin is None or not endpoint_is_local(origin):
+        raise ConfigError(
+            f"the {role} model is declared local but its endpoint is not local; "
+            "declare deployment: self_hosted or hosted to write swap evidence."
+        )
+
+
 def _side(candidate: ModelCandidate, summary: ModelSummary) -> dict[str, Any]:
     return {
         "alias": candidate.alias,
@@ -254,6 +273,7 @@ def build_swap_evidence(run: BenchmarkRun, suite: BenchmarkSuite, candidate_alia
         summary = run.summary_for(alias)
         if model is None or summary is None:
             raise ConfigError(f"the run has no results for its {role} model.")
+        _refuse_local_at_a_host_that_is_not_local(model, _origin_for(model), role)
         sides[role] = _side(model, summary)
 
     payload: dict[str, Any] = {
