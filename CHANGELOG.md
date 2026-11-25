@@ -8,12 +8,20 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0b6] - 2026-11-25
+
+Adds the `model-swap-evidence.v1` writer that the AI Infrastructure Suite's
+`model_providers` vector (suite 0.2.0b1) reads, and closes two ways a remote
+endpoint could be counted as local: the documentation and benchmarking
+address ranges, and a candidate declared `local` at a public host. The
+`agentforge-oss` floor rises to 0.5.6.
+
 ### Added
 - **`modelswapbench swap-evidence`** writes a stored run's baseline-versus-
   candidate result as a `model-swap-evidence.v1` document: the run binding,
   each side's provider kind, model and endpoint origin, the summary counts and
   rates, the thresholds, and this package's own verdict. It is the evidence the
-  AI Infrastructure Suite's planned `model_providers` vector will read, without
+  AI Infrastructure Suite's `model_providers` vector reads (suite 0.2.0b1), without
   importing this package. No prompt, output, case id, error text, cost or full
   URL is written. The JSON Schema ships in the package and is generated from
   the models; fixtures cover every variant. See `docs/model-swap-evidence.md`.
@@ -25,6 +33,8 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   verdict and refuses one that disagrees.
 
 ### Changed
+- **Raised the `agentforge-oss` floor to `>=0.5.6,<0.6.0`.** 0.5.5 and
+  earlier accepted a token in a URL's query string and logged it at INFO.
 - **The documentation and benchmarking ranges are hosted, not local.**
   `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`, `198.18.0.0/15` and
   `2001:db8::/32`, and their IPv4-mapped forms. Python's `is_private`

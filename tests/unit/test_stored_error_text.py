@@ -93,7 +93,9 @@ def test_a_url_that_cannot_be_parsed_is_hosted_not_an_exception(url: str) -> Non
 
 
 def test_the_agentforge_floor_excludes_the_versions_that_repeat_upstream_text() -> None:
+    # 0.5.5 stopped repeating upstream error text; 0.5.6 also stopped logging a
+    # token carried in a URL's query string.
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
     requirement = next(r for r in project["dependencies"] if r.startswith("agentforge-oss"))
 
-    assert requirement == "agentforge-oss>=0.5.5,<0.6.0"
+    assert requirement == "agentforge-oss>=0.5.6,<0.6.0"

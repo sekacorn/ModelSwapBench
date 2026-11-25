@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to run against (for example v0.1.0b5)"
+        description: "Existing tag to run against (for example v0.1.0b6)"
         required: true
         type: string
       dry_run:
