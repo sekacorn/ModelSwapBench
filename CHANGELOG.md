@@ -20,6 +20,14 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   scrub the affected runs under `.modelswapbench/runs/`.
 - An unreachable `openai_compatible` endpoint now reports the error type only.
   The HTTP client's error text is no longer stored with each case.
+- **Raised the `agentforge-oss` floor to `>=0.5.5,<0.6.0`.** The previous
+  floor, `0.5.1`, admitted versions whose provider errors could repeat
+  upstream text, including a reflected credential.
+- Stored case errors no longer repeat upstream text. An Ollama HTTP error
+  stored up to 200 characters of the response body with each case, and the
+  `forge` adapter stored the wrapped exception's message. Both now store a
+  status code or an exception type. Affects every published version through
+  0.1.0b4.
 
 ### Added
 - **`default_query`** on a model, for query parameters an endpoint requires on
@@ -28,6 +36,12 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   written to a run artefact or a log: every serialization of a model shows
   `[redacted]`, the manifest lists the parameter names only
   (`default_query_params`), and the HTTP client's log lines are redacted.
+
+### Fixed
+- `endpoint_is_local` raised on a URL that could not be parsed, such as an
+  unclosed IPv6 bracket. It now returns `False`: an endpoint that is not
+  positively local is hosted, the same answer AgentForge and the AI
+  Infrastructure Suite give.
 
 ## [0.1.0b4] - 2026-11-24
 

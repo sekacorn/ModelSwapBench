@@ -34,7 +34,13 @@ def endpoint_is_local(base_url: str) -> bool:
     that direction is a refused run rather than content leaving the machine
     unannounced.
     """
-    host = urlparse(base_url).hostname or ""
+    try:
+        host = urlparse(base_url).hostname or ""
+    except ValueError:
+        # A URL that cannot be parsed (an unclosed IPv6 bracket, say) is not
+        # positively local, so it is hosted. AgentForge and the AI
+        # Infrastructure Suite answer the same way.
+        return False
     if host in LOCAL_HOSTNAMES:
         return True
     try:
