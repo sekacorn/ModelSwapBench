@@ -6,6 +6,16 @@ Please report security issues privately via a GitHub security advisory on
 [sekacorn/ModelSwapBench](https://github.com/sekacorn/ModelSwapBench/security/advisories)
 rather than a public issue. We aim to acknowledge within a few days.
 
+## Published advisories
+
+| Advisory | Affected | Fixed in |
+|---|---|---|
+| [GHSA-gqgx-c3hr-wrm5](https://github.com/sekacorn/ModelSwapBench/security/advisories/GHSA-gqgx-c3hr-wrm5): credentials and tokens in a model's `base_url` were written to run artefacts and logs | `<= 0.1.0b4` | `0.1.0b5` |
+
+All advisories: [github.com/sekacorn/ModelSwapBench/security/advisories](https://github.com/sekacorn/ModelSwapBench/security/advisories).
+If **Report a vulnerability** is not available on the Security tab, open an issue titled
+"Security contact request" that contains no details.
+
 ## Security posture
 
 ModelSwapBench is local-first and privacy-preserving by default:
