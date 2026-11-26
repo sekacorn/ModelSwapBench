@@ -301,12 +301,34 @@ models, execution params, seed, git commit). `modelswapbench reproduce RUN_ID`
 re-runs the recorded suite and warns on version drift rather than pretending the
 run is identical.
 
+## Evidence for the AI Infrastructure Suite
+
+`modelswapbench swap-evidence` writes a stored run's baseline-versus-candidate result as
+`model-swap-evidence.v1`. The AI Infrastructure Suite binds it to a provider inventory by digest
+and recomputes acceptance and feature coverage from its numbers for the `model_providers`
+vector (`verified (benchmark arithmetic)`). That level never means a model was run in
+production; the measurements themselves stay attested.
+
+## Security
+
+Local-first by default: no hosted provider is used unless you pass `--allow-hosted` and set
+`privacy.allow_hosted_providers`; API keys are read from environment variables by name and never
+written to results; configured URLs refuse credentials and query-string tokens. See
+[SECURITY.md](SECURITY.md).
+
+| Advisory | Affected | Fixed in |
+|---|---|---|
+| [GHSA-gqgx-c3hr-wrm5](https://github.com/sekacorn/ModelSwapBench/security/advisories/GHSA-gqgx-c3hr-wrm5): credentials and tokens in a model's `base_url` were written to run artefacts and logs | `<= 0.1.0b4` | `0.1.0b5` |
+
+All advisories: [github.com/sekacorn/ModelSwapBench/security/advisories](https://github.com/sekacorn/ModelSwapBench/security/advisories).
+
 ## Known limitations
 
 - Results are evidence for a replacement decision, not proof one model is best.
 - Cost figures are estimates, not measured billing.
 - Deterministic providers simulate behavior; only Ollama / OpenAI-compatible runs
-  reflect real models.
+  reflect real models. Hosted endpoints are verified in CI against offline
+  provider-shaped fakes, not against live vendor accounts.
 - Small case counts yield low-confidence or insufficient-evidence decisions;
   confidence intervals do not make a weak dataset representative.
 - The Forge adapter exercises the provider layer, not full agent orchestration (roadmap).
