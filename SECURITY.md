@@ -2,9 +2,11 @@
 
 ## Reporting a vulnerability
 
-Please report security issues privately via a GitHub security advisory on
-[sekacorn/ModelSwapBench](https://github.com/sekacorn/ModelSwapBench/security/advisories)
-rather than a public issue. We aim to acknowledge within a few days.
+Report a suspected vulnerability privately with **Report a vulnerability** on the repository's
+[Security tab](https://github.com/sekacorn/ModelSwapBench/security) (direct link: [github.com/sekacorn/ModelSwapBench/security/advisories/new](https://github.com/sekacorn/ModelSwapBench/security/advisories/new)).
+This is GitHub's private vulnerability reporting: the report stays private between you and the
+maintainers until an advisory is published.
+Please do not open a public issue. We aim to acknowledge within a few days.
 
 ## Published advisories
 
@@ -13,8 +15,6 @@ rather than a public issue. We aim to acknowledge within a few days.
 | [GHSA-gqgx-c3hr-wrm5](https://github.com/sekacorn/ModelSwapBench/security/advisories/GHSA-gqgx-c3hr-wrm5): credentials and tokens in a model's `base_url` were written to run artefacts and logs | `<= 0.1.0b4` | `0.1.0b5` |
 
 All advisories: [github.com/sekacorn/ModelSwapBench/security/advisories](https://github.com/sekacorn/ModelSwapBench/security/advisories).
-If **Report a vulnerability** is not available on the Security tab, open an issue titled
-"Security contact request" that contains no details.
 
 ## Security posture
 
